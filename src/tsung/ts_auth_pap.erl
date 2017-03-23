@@ -6,9 +6,8 @@
 -include("ts_profile.hrl").
 -include("ts_config.hrl").
 -include("ts_radius.hrl").
-%% @headerfile "include/radius.hrl"
--include_lib("radius/include/radius.hrl").
--include("/home/prahveen/ocs/default/include/ocs_eap_codec.hrl"). %% FIXME path for header file
+-include("radius.hrl").
+-include("ocs_eap_codec.hrl").
 
 -spec get_message(Data :: #radius_request{}, State ::#state_rcv{}) ->
 	{NewData :: binary(), Session :: #radius_session{}}.
