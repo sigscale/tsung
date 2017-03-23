@@ -72,12 +72,14 @@ parse1(#state_rcv{session = #radius_session{result_value = "success",
 		username = UserName} = Session, request = #ts_request{param =
 		#radius_request{type = auth, auth_type = 'eap-pwd'}}}
 		= State, Opts, Close) ->
+	ok = radius_lib:register_user(UserName),
 	NewSession = Session#radius_session{username = undefined},
 	NewState = State#state_rcv{session = NewSession},
 	parse2(NewState, Opts, Close);
 parse1(#state_rcv{session = #radius_session{result_value = "success",
 		username = UserName}, request = #ts_request{param =
 		#radius_request{type = auth}}} = State, Opts, Close) ->
+	ok = radius_lib:register_user(UserName),
 	parse2(State, Opts, Close);
 parse1(State, Opts, Close) ->
 	parse2(State, Opts, Close).
