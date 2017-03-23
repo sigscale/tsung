@@ -49,7 +49,7 @@ parse(<<?AccessReject, _/binary>>,#state_rcv{session
 		= #radius_session{radius_id = RadID} = Session} = State) ->
 	NextRadID = (RadID rem 255) + 1, 
 	NewSession = Session#radius_session{radius_id = NextRadID,
-		result_value = failure},
+		result_value = "failure"},
 	NewState = State#state_rcv{ack_done = true, session = NewSession},
 	{NewState, [], false};
 parse(AccessAcceptPacket, #state_rcv{session 
@@ -58,7 +58,7 @@ parse(AccessAcceptPacket, #state_rcv{session
 			radius:codec(AccessAcceptPacket),
 	NextRadID = (RadID rem 255) + 1, 
 	NewSession = Session#radius_session{radius_id = NextRadID,
-		result_value = success},
+		result_value = "success"},
 	NewState = State#state_rcv{ack_done = true, session = NewSession},
 	{NewState, [], false}.
 

@@ -36,8 +36,20 @@ new_session() ->
 	Message :: binary(),
 	Session :: #radius_session{}.
 %% @doc Build a message/request
-%%	CbMod:get_message/2 returns`{Msg, NewSession :: #radius_session{}}'.
+%%	CbMod:get_message/2 returns `{Msg, NewSession :: #radius_session{}}'.
 get_message(#radius_request{type = auth, auth_type = pap} = Data, State) ->
+	get_message2(Data, State);
+get_message(#radius_request{type = auth, auth_type = 'eap-pwd'} = Data,
+		#state_rcv{session = #radius_session{data = undefined}} = State) ->
+	EapRecord = #pwd{eap_id = ?EapID},
+	get_message1(Data, EapRecord, State).
+%% @hidden
+get_message1(Data, RecordData, #state_rcv{session = Session} = State) ->
+	NewSession = Session#radius_session{data = RecordData},
+	NewState = State#state_rcv{session = NewSession},
+	get_message2(Data, NewState).
+%% @hidden
+get_message2(Data, State) ->
 	CbMod = Data#radius_request.cb_mod,
 	CbMod:get_message(Data, State).
 
@@ -56,7 +68,7 @@ parse(Data, #state_rcv{request = #ts_request{param
 	{NS, Opts, Close} = CbMod:parse(Data, State),
 	parse1(NS, Opts, Close).
 %% @hidden
-parse1(#state_rcv{session = #radius_session{result_value = success,
+parse1(#state_rcv{session = #radius_session{result_value = "success",
 		username = UserName}, request = #ts_request{param =
 		#radius_request{type = auth}}} = State, Opts, Close) ->
 	parse2(State, Opts, Close);

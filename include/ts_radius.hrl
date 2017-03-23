@@ -9,7 +9,7 @@
 			acc_type = start :: start | interim | stop,
 			counter = 3 :: integer(),
 			servers :: [tuple()],
-			result_var = challenge :: atom()}).
+			result_var = "challenge" :: string()}).
 
 -record(radius_session,
 			{username :: string() | binary(),
@@ -19,3 +19,19 @@
 			nas_id :: string() | binary(),
 			result_value :: atom(),
 			data :: string() | binary()}).
+
+-record(pwd,
+			{eap_id :: byte(),
+			state = none :: none | atom(),
+			token = undefined :: undefined | binary(),
+			server_id :: string() | binary(),
+			req_auth :: binary(),
+			s_element :: binary(),
+			p_element :: binary(),
+			s_scalar :: binary(),
+			p_scalar :: binary(),
+			p_rand :: integer(),
+			pwe :: binary(),
+			buffer :: binary(),
+			eap_ack = no_ack :: no_ack | ch | sh | cs,
+			eap_ack_done :: boolean()}).
