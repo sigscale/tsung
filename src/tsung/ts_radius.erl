@@ -69,6 +69,13 @@ parse(Data, #state_rcv{request = #ts_request{param
 	parse1(NS, Opts, Close).
 %% @hidden
 parse1(#state_rcv{session = #radius_session{result_value = "success",
+		username = UserName} = Session, request = #ts_request{param =
+		#radius_request{type = auth, auth_type = 'eap-pwd'}}}
+		= State, Opts, Close) ->
+	NewSession = Session#radius_session{username = undefined},
+	NewState = State#state_rcv{session = NewSession},
+	parse2(NewState, Opts, Close);
+parse1(#state_rcv{session = #radius_session{result_value = "success",
 		username = UserName}, request = #ts_request{param =
 		#radius_request{type = auth}}} = State, Opts, Close) ->
 	parse2(State, Opts, Close);
