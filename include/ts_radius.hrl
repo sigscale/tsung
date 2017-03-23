@@ -1,0 +1,21 @@
+-record(radius_request,
+			{type :: auth | acc,
+			username :: string() | binary(),
+			anon_name :: string() | binary(),
+			password :: string() | binary(),
+			secret :: string() | binary(),
+			cb_mod :: atom(),
+			auth_type = undefined :: undefined | pap | eap_pwd,
+			acc_type = start :: start | interim | stop,
+			counter = 3 :: integer(),
+			servers :: [tuple()],
+			result_var = challenge :: atom()}).
+
+-record(radius_session,
+			{username :: string() | binary(),
+			anon_name :: string() | binary(),
+			radius_id :: byte(),
+			mac :: string() | binary(),
+			nas_id :: string() | binary(),
+			result_value :: atom(),
+			data :: string() | binary()}).

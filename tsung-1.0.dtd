@@ -112,7 +112,7 @@
     id       NMTOKEN #IMPLIED
     min      NMTOKEN #IMPLIED
     max      NMTOKEN #IMPLIED
-    type     (ts_http | ts_jabber | ts_pgsql | ts_amqp) #IMPLIED
+    type     (ts_http | ts_jabber | ts_pgsql | ts_amqp | ts_radius) #IMPLIED
     value    CDATA #IMPLIED>
 
 <!ELEMENT set_option (user_agent*| certificate)>
@@ -141,7 +141,7 @@ repeat | if | change_type | foreach | set_option | interaction )*>
     persistent   (true | false) #IMPLIED
     probability   NMTOKEN #IMPLIED
     weight        NMTOKEN #IMPLIED
-    type         (ts_jabber | ts_http | ts_raw | ts_pgsql | ts_ldap | ts_webdav |ts_mysql| ts_fs | ts_shell | ts_job | ts_websocket | ts_amqp | ts_mqtt) #REQUIRED>
+    type         (ts_jabber | ts_http | ts_raw | ts_pgsql | ts_ldap | ts_webdav |ts_mysql| ts_fs | ts_shell | ts_job | ts_websocket | ts_amqp | ts_mqtt | ts_radius) #REQUIRED>
 
 <!ELEMENT session_setup EMPTY>
 <!ATTLIST session_setup
@@ -157,7 +157,7 @@ repeat | if | change_type | foreach | set_option | interaction )*>
 
 <!ELEMENT change_type EMPTY>
 <!ATTLIST change_type
-     new_type         (ts_jabber | ts_http | ts_raw | ts_pgsql | ts_ldap | ts_webdav | ts_mysql | ts_fs | ts_shell | ts_job | ts_websocket | ts_amqp | ts_mqtt) #REQUIRED
+     new_type         (ts_jabber | ts_http | ts_raw | ts_pgsql | ts_ldap | ts_webdav | ts_mysql | ts_fs | ts_shell | ts_job | ts_websocket | ts_amqp | ts_mqtt | ts_radius) #REQUIRED
      host CDATA #REQUIRED
      port CDATA #REQUIRED
      server_type NMTOKEN #REQUIRED
@@ -167,7 +167,7 @@ repeat | if | change_type | foreach | set_option | interaction )*>
     >
 
 <!ELEMENT request ( match*, dyn_variable*, ( http | jabber | raw |
-          pgsql | ldap | mysql |fs | shell | job | websocket | amqp | mqtt) )>
+          pgsql | ldap | mysql |fs | shell | job | websocket | amqp | mqtt | radius) )>
 <!ATTLIST request
     subst (true|false|all_except_body) "false"
     tag   NMTOKEN "undefined"
@@ -495,3 +495,20 @@ repeat | if | change_type | foreach | set_option | interaction )*>
     gte       CDATA #IMPLIED
     lt        CDATA #IMPLIED
     lte       CDATA #IMPLIED >
+
+<!-- Radius Plugin !-->
+<!ELEMENT radius (if*, (accounting | pap | chap | eap_pwd | eap_ttls))>
+<!ATTLIST radius
+	type (auth | acc) #REQUIRED
+	secret CDATA #IMPLIED
+	username CDATA #REQUIRED
+	auth_type (pap | chap | eap-pwd | eap-ttls) #IMPLIED
+	acc_type (start | stop) #IMPLIED
+	result_var  CDATA #IMPLIED
+>
+
+<!ELEMENT pap EMPTY>
+<!ATTLIST pap
+	cb_mod CDATA #REQUIRED
+	password CDATA #REQUIRED
+>
