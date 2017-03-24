@@ -45,7 +45,10 @@ get_message(#radius_request{type = auth, auth_type = 'eap-pwd'} = Data,
 	get_message1(Data, EapRecord, State);
 get_message(#radius_request{type = acc} = Data, #state_rcv{session =
 		#radius_session{data = undefined}} = State) ->
-	AccRecord = #accounting{},
+	{_, ID} = lists:keyfind(tsung_userid, 1, State#state_rcv.dynvars),
+	Name = "acc_session" ++ integer_to_list(ID),
+	Tab = list_to_existing_atom(Name),
+	AccRecord = #accounting{tab_id = Tab},
 	get_message1(Data, AccRecord, State);
 get_message(#radius_request{type = acc, username = "$end_of_table"} = Data,
 		#state_rcv{session = #radius_session{data = #accounting{type = start}
@@ -57,21 +60,21 @@ get_message(#radius_request{type = acc, username = "$end_of_table"} = Data,
 	get_message(Data, NewState);
 get_message(#radius_request{type = acc, username = "$end_of_table"} = Data,
 		#state_rcv{session = #radius_session{data = #accounting{type = interim,
-		counter = CCounter} = Acc} = Session} = State)
+		counter = CCounter, tab_id = ID} = Acc} = Session} = State)
 		when Session#radius_session.username =/= "$end_of_table" ->
-	User = radius_lib:get_user(first),
+	User = radius_lib:get_user(first, ID),
 	NextCounter = CCounter + 1,
 	NewAcc = Acc#accounting{counter = NextCounter},
 	NewSession = Session#radius_session{username = User, data = NewAcc},
 	NewState = State#state_rcv{session = NewSession},
 	get_message2(Data, NewState);
 get_message(#radius_request{type = acc, counter = MCounter} = Data,
-		#state_rcv{session = #radius_session{username = PrevUser,
-		data = #accounting{type = interim, counter = CCounter}}
+		#state_rcv{session = #radius_session{username = PrevUser, data =
+		#accounting{type = interim, counter = CCounter, tab_id = ID}}
 		= Session} = State) when CCounter =< MCounter ->
-	NextUser = case radius_lib:get_user(next, PrevUser) of
+	NextUser = case radius_lib:get_user(next, ID, PrevUser) of
 		'$end_of_table' ->
-			radius_lib:get_user(first);
+			radius_lib:get_user(first, ID);
 		NU ->
 			NU
 	end,
@@ -80,32 +83,35 @@ get_message(#radius_request{type = acc, counter = MCounter} = Data,
 	get_message2(Data, NewState);
 get_message(#radius_request{type = acc, counter = MCounter} = Data,
 		#state_rcv{session = #radius_session{data = #accounting{type = interim,
-		counter = CCounter} = Acc} = Session}
+		counter = CCounter, tab_id = ID} = Acc} = Session}
 		= State) when CCounter > MCounter->
-	User = radius_lib:get_user(first),
+	User = radius_lib:get_user(first, ID),
 	NewAcc = Acc#accounting{type = stop},
 	NewSession = Session#radius_session{username = User, data = NewAcc},
 	NewState = State#state_rcv{session = NewSession},
 	get_message2(Data, NewState);
 get_message(#radius_request{type = acc} = Data, #state_rcv{session =
-		#radius_session{username = PrevUser, data = #accounting{type = stop}}
-		= Session} = State) ->
-	case radius_lib:get_user(next, PrevUser) of
+		#radius_session{username = PrevUser, data = #accounting{type = stop,
+		tab_id = ID}} = Session} = State) ->
+	case radius_lib:get_user(next, ID, PrevUser) of
 		'$end_of_table' ->
-			NextUser = radius_lib:get_user(start, 100),
+			NextUser = case radius_lib:get_user(start, ID, 100) of
+
+			end
 			NewSession = Session#radius_session{username = NextUser,
-					data = #accounting{}},
+					data = undefined},
 			NewState = State#state_rcv{session = NewSession},
-			get_message2(Data, NewState);
+			NewData = Data#radius_request{username = NextUser},
+			get_message(NewData, NewState);
 		NU ->
 			NewSession = Session#radius_session{username = NU},
 			NewState = State#state_rcv{session = NewSession},
 			get_message2(Data, NewState)
 	end;
 get_message(#radius_request{type = acc, username = "$end_of_table"} = Data,
-		#state_rcv{session = #radius_session{data = #accounting{type = stop}
-		= Acc} = Session} = State) ->
-	User = radius_lib:get_user(start, 100),
+		#state_rcv{session = #radius_session{data = #accounting{type = stop,
+		tab_id = ID} = Acc} = Session} = State) ->
+	User = radius_lib:get_user(start, ID, 100),
 	NewSession = Session#radius_session{username = User,
 			data = Acc#accounting{type = start}},
 	NewState = State#state_rcv{session = NewSession},

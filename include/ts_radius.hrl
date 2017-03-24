@@ -41,4 +41,5 @@
 			counter = 0 :: integer(),
 			req_auth :: binary(),
 			resp_auth :: binary(),
+			tab_id :: atom(),
 			acc_session_id :: string() | binary()}).
