@@ -70,19 +70,22 @@ parse(_, #state_rcv{session = #radius_session{radius_id = RadID, data = Acc} = S
 parse1(#state_rcv{session = #radius_session{radius_id = RadID, data =
 		#accounting{type = start}} = Session} = State) ->
 	NextRadID = (RadID rem 255) + 1,
-	NewSession = Session#radius_session{radius_id = NextRadID},
+	NewSession = Session#radius_session{radius_id = NextRadID,
+			result_value = "start"},
 	NewState = State#state_rcv{ack_done = true, session = NewSession},
 	{NewState, [], false};
 parse1( #state_rcv{session = #radius_session{radius_id = RadID, data =
 		#accounting{type = interim} = _Acc} = Session} = State) ->
 	NextRadID = (RadID rem 255) + 1,
-	NewSession = Session#radius_session{radius_id = NextRadID},
+	NewSession = Session#radius_session{radius_id = NextRadID,
+			result_value = "interim"},
 	NewState = State#state_rcv{ack_done = true, session = NewSession},
 	{NewState, [], false};
 parse1(#state_rcv{session = #radius_session{radius_id = RadID,
 		data = #accounting{type = stop}} = Session} = State) ->
 	NextRadID = (RadID rem 255) + 1,
-	NewSession = Session#radius_session{radius_id = NextRadID},
+	NewSession = Session#radius_session{radius_id = NextRadID,
+			result_value = "stop"},
 	NewState = State#state_rcv{ack_done = true, session = NewSession},
 	{NewState, [], false}.
 
