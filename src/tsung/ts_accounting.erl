@@ -44,7 +44,7 @@ get_message(#radius_request{type = acc, secret = Secret},
 get_message(#radius_request{type = acc, secret = Secret},
 		#state_rcv{session = #radius_session{username = PeerID, 
 		radius_id = RadID, nas_id = NasID, mac = MAC, data =
-		#accounting{type = stop, acc_session_id = AccSID} = Acc}
+		#accounting{type = stop, acc_session_id = AccSID}}
 		= Session}) when is_list(PeerID)->
 	ReqAuth = radius:authenticator(),
 	RequestPacket = accounting_stop(AccSID,
@@ -59,9 +59,9 @@ get_message(#radius_request{type = acc, secret = Secret},
 	Options :: list(),
 	Close :: boolean().
 %% @doc Validate received radius packet
-parse(<<?AccountingResponse, _/binary>> = D, State) ->
+parse(<<?AccountingResponse, _/binary>>, State) ->
 	parse1(State);
-parse(_, #state_rcv{session = #radius_session{radius_id = RadID, data = Acc} = Session} = State) ->
+parse(_, #state_rcv{session = #radius_session{radius_id = RadID} = Session} = State) ->
 	NextRadID = (RadID rem 255) + 1,
 	NewSession = Session#radius_session{radius_id = NextRadID},
 	NewState = State#state_rcv{ack_done = true, session = NewSession},
@@ -112,7 +112,7 @@ accounting_stop(AcctSessionID, NasID, Secret, PeerID, MAC, Auth, RadID) ->
 			PeerID, MAC, Auth, RadID).
 
 access_request(RadiusAttributes, AcctSessionID, NasId, Secret,
-		PeerID, MAC, Auth, RadID) ->
+		PeerID, MAC, _Auth, RadID) ->
 	A1 = radius_attributes:add(?UserName, PeerID, RadiusAttributes),
 	A2 = radius_attributes:add(?NasPort, 0, A1),
 	A3 = radius_attributes:add(?NasIdentifier, NasId, A2),
