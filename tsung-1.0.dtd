@@ -512,3 +512,9 @@ repeat | if | change_type | foreach | set_option | interaction )*>
 	cb_mod CDATA #REQUIRED
 	password CDATA #REQUIRED
 >
+
+<!ELEMENT accounting EMPTY>
+<!ATTLIST accounting
+	cb_mod CDATA #REQUIRED
+	interim CDATA #IMPLIED
+>

@@ -15,14 +15,14 @@
 -define(RadID, 10).
 -define(EapID, 1).
 
--spec session_defaults() -> 
+-spec session_defaults() ->
 		{ok, Persistent} when
 	Persistent :: boolean().
-%% @doc Default parameters for session. 
+%% @doc Default parameters for session.
 session_defaults() ->
     {ok,true}.
 
--spec new_session() -> 
+-spec new_session() ->
 			NewSession when
 	NewSession :: #radius_session{} | list().
 %% @doc Initialize session information
@@ -42,12 +42,68 @@ get_message(#radius_request{type = auth, auth_type = pap} = Data, State) ->
 get_message(#radius_request{type = auth, auth_type = 'eap-pwd'} = Data,
 		#state_rcv{session = #radius_session{data = undefined}} = State) ->
 	EapRecord = #pwd{eap_id = ?EapID},
-	get_message1(Data, EapRecord, State).
+	get_message1(Data, EapRecord, State);
+get_message(#radius_request{type = acc} = Data, #state_rcv{session =
+		#radius_session{data = undefined}} = State) ->
+	AccRecord = #accounting{},
+	get_message1(Data, AccRecord, State);
+get_message(#radius_request{type = acc, username = "$end_of_table"} = Data,
+		#state_rcv{session = #radius_session{data = #accounting{type = start}
+		= Acc} = Session} = State)
+		when Session#radius_session.username =/= undefined ->
+	NewAcc = Acc#accounting{type = interim},
+	NewSession = Session#radius_session{data = NewAcc},
+	NewState = State#state_rcv{session = NewSession},
+	get_message(Data, NewState);
+get_message(#radius_request{type = acc, username = "$end_of_table"} = Data,
+		#state_rcv{session = #radius_session{data = #accounting{type = interim,
+		counter = CCounter} = Acc} = Session} = State)
+		when Session#radius_session.username =/= "$end_of_table" ->
+	User = radius_lib:get_user(first),
+	NextCounter = CCounter + 1,
+	NewAcc = Acc#accounting{counter = NextCounter},
+	NewSession = Session#radius_session{username = User, data = NewAcc},
+	NewState = State#state_rcv{session = NewSession},
+	get_message(Data, NewState);
+get_message(#radius_request{type = acc, counter = MCounter} = Data,
+		#state_rcv{session = #radius_session{username = PrevUser,
+		data = #accounting{type = interim, counter = CCounter}}
+		= Session} = State) when CCounter =< MCounter ->
+	NextUser = radius_lib:get_user(next, PrevUser),
+	NewSession = Session#radius_session{username = NextUser},
+	NewState = State#state_rcv{session = NewSession},
+	get_message(Data, NewState);
+get_message(#radius_request{type = acc, counter = MCounter} = Data,
+		#state_rcv{session = #radius_session{data = #accounting{type = interim,
+		counter = CCounter} = Acc} = Session}
+		= State) when CCounter > MCounter->
+	User = radius_lib:get_user(first),
+	NewAcc = Acc#accounting{type = stop},
+	NewSession = Session#radius_session{username = User, data = NewAcc},
+	NewState = State#state_rcv{session = NewSession},
+	get_message(Data, NewState);
+get_message(#radius_request{type = acc} = Data, #state_rcv{session =
+		#radius_session{username = PrevUser, data = #accounting{type = stop}}
+		= Session} = State) ->
+	NextUser = radius_lib:get_user(next, PrevUser),
+	NewSession = Session#radius_session{username = NextUser},
+	NewState = State#state_rcv{session = NewSession},
+	get_message(Data, NewState);
+get_message(#radius_request{type = acc, username = "$end_of_table"} = Data,
+		#state_rcv{session = #radius_session{data = #accounting{type = stop}
+		= Acc} = Session} = State) ->
+	User = radius_lib:get_user(start, 100),
+	NewSession = Session#radius_session{username = User,
+			data = Acc#accounting{type = start}},
+	NewState = State#state_rcv{session = NewSession},
+	get_message(Data, NewState);
+get_message(Data, State) ->
+	get_message2(Data, State).
 %% @hidden
 get_message1(Data, RecordData, #state_rcv{session = Session} = State) ->
 	NewSession = Session#radius_session{data = RecordData},
 	NewState = State#state_rcv{session = NewSession},
-	get_message2(Data, NewState).
+	get_message(Data, NewState).
 %% @hidden
 get_message2(Data, State) ->
 	CbMod = Data#radius_request.cb_mod,

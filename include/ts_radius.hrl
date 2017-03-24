@@ -35,3 +35,10 @@
 			buffer :: binary(),
 			eap_ack = no_ack :: no_ack | ch | sh | cs,
 			eap_ack_done :: boolean()}).
+
+-record(accounting,
+			{type = start :: start | interim | stop,
+			counter = 3 :: integer(),
+			req_auth :: binary(),
+			resp_auth :: binary(),
+			acc_session_id :: string() | binary()}).
