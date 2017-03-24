@@ -88,8 +88,8 @@ get_message(#radius_request{type = acc, counter = MCounter} = Data,
 	NewState = State#state_rcv{session = NewSession},
 	get_message2(Data, NewState);
 get_message(#radius_request{type = acc} = Data, #state_rcv{session =
-		#radius_session{username = PrevUser, data = #accounting{type = stop}
-		= Acc} = Session} = State) ->
+		#radius_session{username = PrevUser, data = #accounting{type = stop}}
+		= Session} = State) ->
 	case radius_lib:get_user(next, PrevUser) of
 		'$end_of_table' ->
 			NextUser = radius_lib:get_user(start, 100),
