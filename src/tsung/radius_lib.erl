@@ -3,7 +3,7 @@
 
 -export([install_db/1]).
 -export([user/1]).
--export([register_user/1, get_user/1, get_user/2]).
+-export([register_user/1, get_user/2, get_user/3]).
 
 -include("ts_radius.hrl").
 
@@ -25,12 +25,17 @@
 %% @doc CB for xml config file
 user({_Pid, DynVars}) ->
 	User = lists:keyfind(username, 1, DynVars),
-	user1(User).
+	{_, ID} = lists:keyfind(tsung_userid, 1, DynVars),
+	user1(ID, User).
 %% @hidden
-user1(false) ->
-	get_user(new, 100);
-user1({username, PrevUser}) ->
-	get_user(next, PrevUser).
+user1(ID, false) ->
+	Name = "acc_session" ++ integer_to_list(ID),
+	Tab = list_to_atom(Name),
+	get_user(new, Tab, 100);
+user1(ID, {username, PrevUser}) ->
+	Name = "acc_session" ++ integer_to_list(ID),
+	Tab = list_to_existing_atom(Name),
+	get_user(next, Tab, PrevUser).
 
 %-----------------------------------------------------------------
 %% CallBack Function for RADIUS pulgin
@@ -68,40 +73,50 @@ register_user(User) when is_list(User) ->
 	mnesia:dirty_write(?Registered, #registered{username = User}).
 
 
--spec get_user(first) ->
+-spec get_user(first, Tab) ->
 		User when
+	Tab :: integer(),
 	User :: binary() | string().
-%% @equiv get_user(fist, undefined)
-get_user(first) ->
-	get_user(first, undefined).
+%% @equiv get_user(fist, Tab,  undefined)
+get_user(first, Tab) ->
+	get_user(first, Tab, undefined).
 
--spec get_user(Type, Spec) ->
+-spec get_user(Type, Tab, Spec) ->
 		User when
-	Type :: new | start | first | next,
+	Type :: new | start | first | next | next_chunk,
+	Tab :: atom(),
 	Spec :: integer() | undefined | '$end_of_table',
 	User :: binary() | string().
 %% @doc Get authenticated users.
-get_user(new, ChunkSize) when is_integer(ChunkSize) ->
-	case ets:info(?SessionTab, name) of
+get_user(new, Tab, ChunkSize) when is_integer(ChunkSize) ->
+	case ets:info(Tab, name) of
 		undefined ->
-			ets:new(?SessionTab, ?SessionTabOptions),
-			get_user(start, ChunkSize);
+			ets:new(Tab, ?SessionTabOptions),
+			get_user(start, Tab, ChunkSize);
 		_ ->
-			get_user(first, undefined)
+			get_user(first, Tab, undefined)
 	end;
-get_user(start, ChunkSize) when is_integer(ChunkSize) ->
-	case authenticated_users(?SessionTab, ChunkSize) of
+get_user(start, Tab, ChunkSize) when is_integer(ChunkSize) ->
+	case authenticated_users(Tab, ChunkSize) of
 		'$end_of_table' ->
 			'$end_of_table';
 		_ ->
-			ets:first(?SessionTab)
+			ets:first(Tab)
 	end;
-get_user(first, undefined) ->
-	ets:first(?SessionTab);
-get_user(next, '$end_of_table')  ->
-	ets:first(?SessionTab);
-get_user(next, PrevUser)  ->
-	ets:next(?SessionTab, PrevUser).
+get_user(first, Tab, undefined) ->
+	ets:first(Tab);
+get_user(next, Tab, '$end_of_table')  ->
+	ets:first(Tab);
+get_user(next, Tab, PrevUser)  ->
+	ets:next(Tab, PrevUser);
+get_user(next_chunk, Tab, ChunkSize) ->
+	ets:delete(Tab),
+	case authenticated_users(Tab, ChunkSize) of
+		'$end_of_table' ->
+			get_user(next_chunk, Tab, ChunkSize);
+		_ ->
+			ets:first(Tab)
+	end.
 
 %------------------------------------------------------------
 %% Internal Functions
