@@ -38,7 +38,7 @@
 
 -record(accounting,
 			{type = start :: start | interim | stop,
-			counter = 3 :: integer(),
+			counter = 0 :: integer(),
 			req_auth :: binary(),
 			resp_auth :: binary(),
 			acc_session_id :: string() | binary()}).
