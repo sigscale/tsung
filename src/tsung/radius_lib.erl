@@ -110,7 +110,7 @@ get_user(next, Tab, '$end_of_table')  ->
 get_user(next, Tab, PrevUser)  ->
 	ets:next(Tab, PrevUser);
 get_user(next_chunk, Tab, ChunkSize) ->
-	ets:delete(Tab),
+	true = ets:delete(Tab),
 	case authenticated_users(Tab, ChunkSize) of
 		'$end_of_table' ->
 			get_user(next_chunk, Tab, ChunkSize);
