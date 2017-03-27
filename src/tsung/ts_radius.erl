@@ -38,10 +38,12 @@ new_session() ->
 %% @doc Build a message/request
 %%	CbMod:get_message/2 returns `{Msg, NewSession :: #radius_session{}}'.
 get_message(#radius_request{type = auth, auth_type = pap} = Data, State) ->
+	ok = radius_lib:install_db([node()]),
 	get_message2(Data, State);
 get_message(#radius_request{type = auth, auth_type = 'eap-pwd'} = Data,
 		#state_rcv{session = #radius_session{data = undefined}} = State) ->
 	EapRecord = #pwd{eap_id = ?EapID},
+	ok = radius_lib:install_db([node()]),
 	get_message1(Data, EapRecord, State);
 get_message(#radius_request{type = acc} = Data, #state_rcv{session =
 		#radius_session{data = undefined}} = State) ->
