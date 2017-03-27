@@ -95,7 +95,7 @@ get_message(#radius_request{type = acc} = Data, #state_rcv{session =
 		tab_id = ID}} = Session} = State) ->
 	case radius_lib:get_user(next, ID, PrevUser) of
 		'$end_of_table' ->
-			NextUser = radius_lib:get_user(start, ID, 100),
+			NextUser = radius_lib:get_user(next_chunk, ID, 100),
 			NewSession = Session#radius_session{username = NextUser,
 					data = undefined},
 			NewState = State#state_rcv{session = NewSession},
@@ -106,10 +106,10 @@ get_message(#radius_request{type = acc} = Data, #state_rcv{session =
 			NewState = State#state_rcv{session = NewSession},
 			get_message2(Data, NewState)
 	end;
-get_message(#radius_request{type = acc, username = "$end_of_table"} = Data,
+get_message(#radius_request{type = acc, username = '$end_of_table'} = Data,
 		#state_rcv{session = #radius_session{data = #accounting{type = stop,
 		tab_id = ID} = Acc} = Session} = State) ->
-	User = radius_lib:get_user(start, ID, 100),
+	User = radius_lib:get_user(next_chunk, ID, 100),
 	NewSession = Session#radius_session{username = User,
 			data = Acc#accounting{type = start}},
 	NewState = State#state_rcv{session = NewSession},
