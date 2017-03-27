@@ -502,13 +502,19 @@ repeat | if | change_type | foreach | set_option | interaction )*>
 	type (auth | acc) #REQUIRED
 	secret CDATA #IMPLIED
 	username CDATA #REQUIRED
-	auth_type (pap | chap | eap-pwd | eap-ttls) #IMPLIED
+	auth_type (pap | chap | eap_pwd | eap_ttls) #IMPLIED
 	acc_type (start | stop) #IMPLIED
 	result_var  CDATA #IMPLIED
 >
 
 <!ELEMENT pap EMPTY>
 <!ATTLIST pap
+	cb_mod CDATA #REQUIRED
+	password CDATA #REQUIRED
+>
+
+<!ELEMENT eap_pwd EMPTY>
+<!ATTLIST eap_pwd
 	cb_mod CDATA #REQUIRED
 	password CDATA #REQUIRED
 >
