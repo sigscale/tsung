@@ -92,7 +92,7 @@ parse(<<?AccessReject, _/binary>>, #state_rcv{session
 	NewSession = #radius_session{data = Eap,
 			result_value = "failure", radius_id = NextRadID},
 	NewState = State#state_rcv{session = NewSession, ack_done = true},
-	{NewState, [], true};
+	{NewState, [], false};
 parse(<<?AccessChallenge, _/binary>> = Data,
 		#state_rcv{session = #radius_session{data = #pwd{state = id,
 		req_auth = ReqAuth} = Eap, radius_id = RadID} = Session, request =
