@@ -135,7 +135,7 @@ parse(<<?AccessAccept, _/binary>> = Data,
 	Eap = #pwd{state = none, eap_id = NewEapID},
 	NextRadID = (RadID rem 255) + 1,
 	NewSession = #radius_session{username = PeerID, data = Eap,
-			result_value = success, radius_id = NextRadID},
+			result_value = "success", radius_id = NextRadID},
 	NewState = State#state_rcv{session = NewSession, ack_done = true},
 	{NewState, [], false}.
 
