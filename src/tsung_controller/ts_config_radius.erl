@@ -36,14 +36,12 @@ parse_config(Element = #xmlElement{name = radius, attributes = Attrs},
 			DefParams#radius_request{acc_type = AccType, cb_mod = CbMod,
 					counter = Counter, result_var = {var, ResultVar}};
 		{auth, pap}  ->
-			ok = radius_lib:install_db([node()]),
 			ResultVar = ts_config:getAttr(atom, Attrs, result_var, none),
 			CbMod = getAttr(atom, Element#xmlElement.content, pap, cb_mod),
 			Password = getAttr(string, Element#xmlElement.content, pap, password),
 			DefParams#radius_request{auth_type = pap, cb_mod = CbMod,
 					password = Password, result_var = {var, ResultVar}};
 		{auth, eap_pwd} ->
-			ok = radius_lib:install_db([node()]),
 			ResultVar = ts_config:getAttr(atom, Attrs, result_var, none),
 			CbMod = getAttr(atom, Element#xmlElement.content, eap_pwd, cb_mod),
 			Password = getAttr(string, Element#xmlElement.content, eap_pwd, password),
