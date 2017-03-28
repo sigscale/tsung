@@ -838,6 +838,9 @@ handle_next_request(Request, State) ->
                         global ->
                             ts_timer:connected(self()),
                             {next_state, wait_ack, NewState};
+                        parse when Protocol == ts_udp ->
+                            TimeOut =(NewState#state_rcv.proto_opts)#proto_opts.idle_timeout,
+                            {next_state, wait_ack, NewState, TimeOut};
                         _ ->
                             {next_state, wait_ack, NewState}
                         end;
