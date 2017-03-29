@@ -43,7 +43,7 @@
 
 %% gen_server callbacks
 
--export([init/1, wait_ack/2, think/2,handle_sync_event/4, handle_event/3,
+-export([init/1, wait_ack/2, think/2, resend/2, handle_sync_event/4, handle_event/3,
          handle_info/3, terminate/3, code_change/4]).
 
 %%%----------------------------------------------------------------------
@@ -169,6 +169,56 @@ wait_ack(timeout,State) ->
     ts_mon:add({ count, error_timeout }),
     {stop, normal, State}.
 
+resend(timeout, State=#state_rcv{message = Message, socket = Socket,
+		protocol = Protocol, host = Host, port = Port, proto_opts = ProtoOpts})
+		when State#state_rcv.retries < ProtoOpts#proto_opts.max_retries ->
+	%?LOG("connection close while sending message!~n", ?NOTICE),
+	ts_mon:add({ count, list_to_atom("duplicate_packet" ++ integer_to_list(ProtoOpts#proto_opts.max_retries)) }),
+	Count = State#state_rcv.count-1,
+	Now = ?NOW,
+	case catch send(Protocol, Socket, Message, Host, Port) of
+		ok ->
+			PageTimeStamp = case State#state_rcv.page_timestamp of
+				0 -> Now; %first request of a page
+				_ -> %page already started
+					State#state_rcv.page_timestamp
+			end,
+			ts_mon:add({ sum, size_sent, size_msg(Message)}),
+			ts_mon:sendmes({State#state_rcv.dump, self(), Message}),
+			Retries = State#state_rcv.retries +1,
+			NewState = State#state_rcv{count = Count,
+												retries = Retries,
+												proto_opts = ProtoOpts#proto_opts{is_first_connect = false},
+												page_timestamp = PageTimeStamp,
+												send_timestamp= Now,
+												timestamp= Now },
+			TimeOut =(NewState#state_rcv.proto_opts)#proto_opts.idle_timeout,
+			{next_state, resend, NewState, TimeOut};
+		{error, closed} when State#state_rcv.retries < ProtoOpts#proto_opts.max_retries ->
+			?LOG("connection close while sending message!~n", ?NOTICE),
+			ts_mon:add({ count, error_connection_closed }),
+			Retries = State#state_rcv.retries +1,
+			handle_close_while_sending(State#state_rcv{retries=Retries});
+		{error, Reason}  when State#state_rcv.retries < ProtoOpts#proto_opts.max_retries ->
+			%% LOG only at INFO level since we report also an error to ts_mon
+			?LOGF("Error: Unable to send data, reason: ~p~n",[Reason],?INFO),
+			CountName="error_send_"++atom_to_list(Reason),
+			ts_mon:add({ count, list_to_atom(CountName) }),
+			Retries = State#state_rcv.retries +1,
+			handle_timeout_while_sending(State#state_rcv{retries=Retries});
+		{'EXIT', {noproc, _Rest}}  when State#state_rcv.retries < ProtoOpts#proto_opts.max_retries ->
+			?LOG("EXIT from ssl app while sending message !~n", ?WARN),
+			Retries = State#state_rcv.retries +1,
+			handle_close_while_sending(State#state_rcv{retries=Retries});
+		Exit when State#state_rcv.retries < ProtoOpts#proto_opts.max_retries ->
+			?LOGF("EXIT Error: Unable to send data, reason: ~p~n", [Exit], ?ERR),
+			ts_mon:add({ count, error_send }),
+			{stop, normal, State}
+	end;
+resend(timeout, State) ->
+	ts_mon:add({ count, error_abort_max_send_retries }),
+	{stop, normal, State}.
+
 %%--------------------------------------------------------------------
 %% Func: handle_event/3
 %% Returns: {next_state, NextStateName, NextStateData}          |
@@ -217,7 +267,8 @@ handle_info({erlang, _Socket, Data}, wait_ack, State) ->
 handle_info(Info, StateName, State = #state_rcv{protocol = Transport, socket = Socket}) ->
     handle_info2(Transport:normalize_incomming_data(Socket, Info), StateName, State).
 
-handle_info2({gen_ts_transport, _Socket, Data}, wait_ack, State=#state_rcv{rate_limit=TokenParam}) when is_binary(Data)->
+handle_info2({gen_ts_transport, _Socket, Data}, StateName, State=#state_rcv{rate_limit=TokenParam}) when is_binary(Data);
+		StateName == wait_ack , StateName == resend ->
     ?DebugF("data received: size=~p ~n",[size(Data)]),
     NewTokenParam = case TokenParam of
                         undefined ->
@@ -822,6 +873,7 @@ handle_next_request(Request, State) ->
                                                protocol = Protocol,
                                                host     = Host,
                                                request  = Request,
+															  message  = Message,
                                                port     = Port,
                                                count    = Count,
                                                session  = NewSession,
@@ -840,7 +892,7 @@ handle_next_request(Request, State) ->
                             {next_state, wait_ack, NewState};
                         parse when Protocol == ts_udp ->
                             TimeOut =(NewState#state_rcv.proto_opts)#proto_opts.idle_timeout,
-                            {next_state, wait_ack, NewState, TimeOut};
+                            {next_state, resend, NewState, TimeOut};
                         _ ->
                             {next_state, wait_ack, NewState}
                         end;
