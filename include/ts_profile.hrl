@@ -123,7 +123,8 @@
          clienttype, % module name (ts_jabber, etc.)
          transactions=[], % current transactions
          rate_limit, % rate limiting parameters
-         dump        % type of dump (full, light, none)
+         dump,        % type of dump (full, light, none)
+         message
         }).
 
 -record(phase,
