@@ -1,3 +1,16 @@
+-define(Registered, registered).
+-define(Timeout, 4000).
+-define(ChunkSize, 10).
+-define(SessionTab, accsession).
+-define(SessionTabOptions, [private, named_table, {keypos, 2}]).
+
+-record(registered, {username, password}).
+
+-record(acc_session,
+			{username,
+			type = start :: start | interim | stop,
+			counter = 0}).
+
 -record(radius_request,
 			{type :: auth | acc,
 			username :: string() | binary(),
