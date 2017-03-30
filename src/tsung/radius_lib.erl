@@ -64,14 +64,22 @@ install_db(Node) ->
 	end.
 
 -spec register_user(User) ->
-		ok  when
-	User :: binary() | list().
+		ok  | {error, Reason} when
+	User :: binary() | list(),
+	Reason :: term().
 %% @doc Register authenticated users
 register_user(User) when is_binary(User)->
 	register_user(binary_to_list(User));
 register_user(User) when is_list(User) ->
-	mnesia:dirty_write(?Registered, #registered{username = User}).
-
+	F = fun() ->
+		mnesia:write(?Registered, #registered{username = User}, write)
+	end,
+	case mnesia:transaction(F) of
+		{atomic, ok} ->
+			ok;
+		{aborted, Reason} ->
+			{error, Reason}
+	end.
 
 -spec get_user(first, Tab) ->
 		User when
