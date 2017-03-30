@@ -47,8 +47,8 @@ user1(ID, {username, PrevUser}) ->
 	Reason :: term().
 install_db(Node) ->
 	rpc:multicall(Node, mnesia, start, []),
-	case mnesia:wait_for_tables([?Registered], 300) of
-		{timeout, _} ->
+	case ets:info(?Registered, name) of
+		undefined ->
 			ping(),
 			Nodes = Node ++ nodes(),
 			rpc:multicall(Nodes, mnesia, start, []),
@@ -59,7 +59,7 @@ install_db(Node) ->
 				{aborted, Reason} ->
 					{error, Reason}
 			end;
-		ok ->
+		_ ->
 			ok
 	end.
 
