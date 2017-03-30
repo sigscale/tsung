@@ -27,7 +27,34 @@ session_defaults() ->
 	NewSession :: #radius_session{} | list().
 %% @doc Initialize session information
 new_session() ->
-    #radius_session{radius_id  = ?RadID}.
+	Nodes = [node() | nodes()],
+	ID = {?MODULE, self()},
+	global:set_lock(ID),
+	try mnesia:table_info(?Registered, ram_copies) of
+		Nodes ->
+			case mnesia:wait_for_tables([?Registered], ?Timeout) of
+				{timeout, _} ->
+					throw(timeout);
+				{error, Reason} ->
+					throw(Reason);
+				ok ->
+					#radius_session{radius_id  = ?RadID}
+			end;
+		_ ->
+			throw(bad_nodes)
+	catch
+		exit:_ ->
+			case radius_lib:install_db(Nodes) of
+				ok ->
+					#radius_session{radius_id  = ?RadID};
+				{error, Reason} ->
+					{error, Reason}
+			end;
+		throw:Reason ->
+			exit(Reason)
+	after
+		global:del_lock(ID)
+	end.
 
 -spec get_message(Data, State) ->
 		{Message, Session} when
@@ -38,7 +65,6 @@ new_session() ->
 %% @doc Build a message/request
 %%	CbMod:get_message/2 returns `{Msg, NewSession :: #radius_session{}}'.
 get_message(#radius_request{type = auth, auth_type = pap} = Data, State) ->
-	ok = radius_lib:install_db([node()]),
 	get_message2(Data, State);
 get_message(#radius_request{type = auth, auth_type = 'eap-pwd'} = Data,
 		#state_rcv{session = #radius_session{data = undefined}} = State) ->

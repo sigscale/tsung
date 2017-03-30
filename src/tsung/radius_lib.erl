@@ -7,17 +7,6 @@
 
 -include("ts_radius.hrl").
 
--record(registered, {username, password}).
--define(ChunkSize, 10).
--define(Registered, registered).
-
--record(acc_session,
-			{username,
-			type = start :: start | interim | stop,
-			counter = 0}).
--define(SessionTab, accsession).
--define(SessionTabOptions, [private, named_table, {keypos, 2}]).
-
 %---------------------------------------------------------------
 %% CallBack Function for tsung config file
 %---------------------------------------------------------------
@@ -41,27 +30,36 @@ user1(ID, {username, PrevUser}) ->
 %% CallBack Function for RADIUS pulgin
 %-----------------------------------------------------------------
 
--spec install_db(Node) ->
+-spec install_db(Nodes) ->
 		ok | {error, Reason} when
-	Node :: [node()],
+	Nodes :: [node()],
 	Reason :: term().
-install_db(Node) ->
-	rpc:multicall(Node, mnesia, start, []),
-	case ets:info(?Registered, name) of
-		undefined ->
-			ping(),
-			Nodes = Node ++ nodes(),
-			rpc:multicall(Nodes, mnesia, start, []),
-			case mnesia:create_table(?Registered,
-					[{attributes, record_info(fields, registered)}]) of
-				{atomic, ok} ->
-					ok;
-				{aborted, Reason} ->
-					{error, Reason}
+install_db(Nodes) ->
+	install_db(Nodes, rpc:multicall(Nodes, mnesia, start, [])).
+%% @hidden
+install_db(Nodes, {ResL, []}) ->
+	install_db1(Nodes, lists:usort(ResL));
+install_db(_, _) ->
+	{error, bad_rpc}.
+%% @hidden
+install_db1(Nodes, [ok]) ->
+	case mnesia:create_table(?Registered,
+			[{attributes, record_info(fields, registered)},
+			{ram_copies, Nodes}]) of
+		{atomic, ok} ->
+			case mnesia:wait_for_tables([?Registered], ?Timeout) of
+				{timeout, _} ->
+					{error, timeout};
+				{error, Reason} ->
+					{error, Reason};
+				ok ->
+					ok
 			end;
-		_ ->
-			ok
-	end.
+		{aborted, Reason} ->
+			{error, Reason}
+	end;
+install_db1(_, [_]) ->
+	{error, bad_rpc}.
 
 -spec register_user(User) ->
 		ok  | {error, Reason} when
@@ -129,15 +127,6 @@ get_user(next_chunk, Tab, ChunkSize) ->
 %------------------------------------------------------------
 %% Internal Functions
 %------------------------------------------------------------
-ping() ->
-	KnownNodes = nodes(known),
-	F = fun(C) when C =/= node() ->
-			net_adm:ping(C);
-		(_) ->
-			ok
-	end,
-	lists:foreach(F, KnownNodes).
-
 authenticated_users(Tab, ChunkSize) ->
 	MatchSpec = [{'_', [], ['$_']}],
 	F1 = fun(#registered{username = U}) ->
