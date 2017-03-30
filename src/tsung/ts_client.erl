@@ -173,7 +173,7 @@ resend(timeout, State=#state_rcv{message = Message, socket = Socket,
 		protocol = Protocol, host = Host, port = Port, proto_opts = ProtoOpts})
 		when State#state_rcv.retries < ProtoOpts#proto_opts.max_retries ->
 	%?LOG("connection close while sending message!~n", ?NOTICE),
-	ts_mon:add({ count, list_to_atom("duplicate_packet" ++ integer_to_list(ProtoOpts#proto_opts.max_retries)) }),
+	ts_mon:add({ count, duplicate_packet }),
 	Count = State#state_rcv.count-1,
 	Now = ?NOW,
 	case catch send(Protocol, Socket, Message, Host, Port) of
