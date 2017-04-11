@@ -1,66 +1,51 @@
 <?xml version="1.0"?>
 <!DOCTYPE tsung SYSTEM "/usr/share/tsung/tsung-1.0.dtd">
-<tsung loglevel="debug" dumptraffic="false" version="1.0">
+<tsung loglevel="notice" dumptraffic="false" version="1.0">
    <clients>
-      <client host="rt" use_controller_vm="true"/> 
+      <client host="tsung-group-333v"/>
+      <client host="tsung-group-vf8h"/>
+      <client host="tsung-group-xd9v"/>
    </clients>
 
    <servers>
       <server host="accounting" port="1813" type="udp" weight="1"></server> 
-      <server host="authentication" port="1812" type="udp" weight="2"></server> 
+      <server host="authentication" port="1812" type="udp" weight="100"></server> 
    </servers>
 
-   <load >
-      <arrivalphase phase="1" duration="10" unit="minute">
-         <session_setup name="pwd-auth" weight="450"/>
-         <session_setup name="simple-auth" weight="200"/>
-         <session_setup name="accounting" weight="0"/>
-         <users maxnumber="650" arrivalrate="0.5" unit="second"></users>
-      </arrivalphase>
+   <monitoring>
+      <monitor host="tsung-group-333v" type="erlang"></monitor>
+      <monitor host="tsung-group-vf8h" type="erlang"></monitor>
+      <monitor host="tsung-group-xd9v" type="erlang"></monitor>
+   </monitoring>
 
-      <arrivalphase phase="2" duration="15" unit="minute">
-         <session_setup name="accounting" weight="100"/>
+   <load>
+      <arrivalphase phase="1" duration="10" unit="minute">
          <session_setup name="simple-auth" weight="100"/>
-         <session_setup name="pwd-auth" weight="100"/>
-         <users maxnumber="300" arrivalrate="1" unit="second"></users>
+         <session_setup name="accounting" weight="0"/>
+         <users maxnumber="100" arrivalrate="1" unit="second"></users>
+      </arrivalphase>
+      <arrivalphase phase="2" duration="1440" unit="minute">
+         <session_setup name="accounting" weight="100"/>
+         <session_setup name="simple-auth" weight="50"/>
+         <users maxnumber="150" arrivalrate="1" unit="second"></users>
       </arrivalphase>
    </load>
 
    <options>
       <option name="idle_timeout" value="5000"></option>
-      <option name="file_server" id='credentials' value="/tmp/eap.csv"></option>
+      <option name="file_server" id='credentials' value="/tmp/ocs.csv"></option>
    </options>
 
    <sessions>
-      <session weight="1" name="pwd-auth" type="ts_radius">
-         <repeat name="nas-pwd" max_repeat="10000" >
-            <setdynvars sourcetype="file" fileid="credentials" delimiter="," order="iter">
-               <var name="username" />
-               <var name="password" />
-            </setdynvars>
-            <transaction name="authentication_pwd">
-               <repeat name="pwd_repeat" max_repeat="50000">
-                  <request subst='true'>
-                     <radius type="auth" secret="helga1989" auth_type="eap_pwd" username="%%_username%%" result_var="result">
-                        <eap_pwd cb_mod="ts_auth_pwd" password="%%_password%%"></eap_pwd>
-                     </radius>
-                  </request>
-               <while var="result" eq="challenge"/>
-               </repeat>
-            </transaction>
-         <while var="username" neq="done"/>
-         </repeat>
-      </session>
-
       <session weight="1" name="simple-auth" type="ts_radius">
-         <repeat name="nas-simple" max_repeat="1000" >
-            <setdynvars sourcetype="file" fileid="credentials" delimiter="," order="iter">
+         <repeat name="nas-simple" max_repeat="10000000" >
+            <setdynvars sourcetype="file" fileid="credentials" delimiter="," order="random">
                <var name="username" />
                <var name="password" />
             </setdynvars>
             <transaction name="authentication_simple">
                <request subst='true'>
-                  <radius type="auth" secret="helga1989" auth_type="pap" username="%%_username%%">
+                  <radius type="auth" secret="helga1989" auth_type="pap" username="%%_username%%" min="50" max="100" random="true">
                      <pap cb_mod='ts_auth_pap' password="%%_password%%"></pap>
                   </radius>
                </request>
@@ -70,13 +55,13 @@
       </session> 
 
       <session weight="1" name="accounting" type="ts_radius">
-         <repeat name="nas-pwd1" max_repeat="10000" >
+         <repeat name="nas-pwd1" max_repeat="10000000" >
             <setdynvars sourcetype="erlang" callback="radius_lib:user">
                <var name="username" />
             </setdynvars>
             <transaction name="accounting">
                <request subst='true'>
-                  <radius type="acc" acc_type = "start" secret="helga1989" username="%%_username%%">
+                  <radius type="acc" acc_type = "start" secret="helga1989" username="%%_username%%" min="50" max="200" random="true">
                      <accounting cb_mod="ts_accounting"></accounting>
                   </radius>
                </request>
