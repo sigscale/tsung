@@ -504,6 +504,10 @@ repeat | if | change_type | foreach | set_option | interaction )*>
 	username CDATA #REQUIRED
 	auth_type (pap | chap | eap_pwd | eap_ttls) #IMPLIED
 	acc_type (start | stop) #IMPLIED
+	value NMTOKEN #IMPLIED
+	min NMTOKEN #IMPLIED
+	max NMTOKEN #IMPLIED
+	random (true | false) #IMPLIED
 	result_var  CDATA #IMPLIED
 >
 
