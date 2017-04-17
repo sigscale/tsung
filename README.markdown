@@ -37,8 +37,8 @@ file may include a `<radius>...</radius>` stanza as in the examples below.
 ```
 
 ### Usernames/Passwords
-The user names and passwords used may also be provided through [dynamic substitution]
-(http://tsung.erlang-projects.org/user_manual/conf-advanced-features.html#dynamic-substitutions):
+The user names and passwords used may also be provided through
+[dynamic substitution](http://tsung.erlang-projects.org/user_manual/conf-advanced-features.html#dynamic-substitutions):
 ```xml
 <setdynvars sourcetype="file" fileid="credentials" delimiter="," order="random">
     <var name="username" />
@@ -57,8 +57,8 @@ The user names and passwords used may also be provided through [dynamic substitu
 While other protocols Tsung supports (e.g. HTTP) have short lived sessions
 with RADIUS a Network Access Server (NAS) would maintain a permanent
 association with an Access, Authentication & Accounting (AAA) server.
-Therefore a scenario configuration for RADIUS will typically use a [repeat]
-(http://tsung.erlang-projects.org/user_manual/conf-advanced-features.html#repeat)
+Therefore a scenario configuration for RADIUS will typically use a
+[repeat](http://tsung.erlang-projects.org/user_manual/conf-advanced-features.html#repeat)
 element in a `<session>`:
 ```xml
 <session weight="1" name="simple-auth" type="ts_radius">
@@ -76,7 +76,7 @@ element in a `<session>`:
 ```
 
 ### Timing
-The [thinktime](http://tsung.erlang-projects.org/user_manual/conf-sessions.html#thinktimes)
+The [`<thinktime>`](http://tsung.erlang-projects.org/user_manual/conf-sessions.html#thinktimes)
 element is normally used in Tsung to space client sessions however since with
 RADIUS sessions are long lived the `<radius>` element supports attributes to
 control request timing. In the example below a random 50-200ms delay between
