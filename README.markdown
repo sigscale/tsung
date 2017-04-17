@@ -30,7 +30,7 @@ attribute and a `<pap>` element:
 
 #### Accounting
 RADIUS `Accounting-Request` transactions are configured with a `type=acc`
-attribute. The `auth_type` attribute specifies the RADIUS `Acct-Status-Type`:
+attribute. The `acc_type` attribute specifies the RADIUS `Acct-Status-Type`:
 ```xml
 <transaction name="accounting">
     <request>
