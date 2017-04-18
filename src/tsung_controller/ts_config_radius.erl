@@ -25,17 +25,16 @@ parse_config(Element = #xmlElement{name = radius, attributes = Attrs},
 	UserName = ts_config:getAttr(string, Attrs, username, undefined),
 	Secret = ts_config:getAttr(string, Attrs, secret, undefined),
 	RadType = ts_config:getAttr(atom, Attrs, type, undefined),
-	AccType = ts_config:getAttr(atom, Attrs, acc_type, undefined),
-	AuthType = ts_config:getAttr(atom, Attrs, auth_type, undefined),
+	ElementType = element_type(Element#xmlElement.content),
 	DefParams = #radius_request{type = RadType,
 			username = UserName, servers = Servers, secret = Secret},
-	SessionData = case {RadType, AuthType} of 
+	SessionData = case {RadType, ElementType} of
 		{acc, _} ->
 			ResultVar = ts_config:getAttr(atom, Attrs, result_var, none),
 			CbMod = getAttr(atom, Element#xmlElement.content, accounting, cb_mod),
 			Counter = getAttr(integer,
 					Element#xmlElement.content, accounting, counter, 3),
-			DefParams#radius_request{acc_type = AccType, cb_mod = CbMod,
+			DefParams#radius_request{cb_mod = CbMod,
 					counter = Counter, result_var = {var, ResultVar}};
 		{auth, pap}  ->
 			ResultVar = ts_config:getAttr(atom, Attrs, result_var, none),
@@ -75,6 +74,16 @@ parse_config(_, Conf = #config{}) ->
 %%---------------------------------------------------------------------
 %%  Internal functions
 %%---------------------------------------------------------------------
+-spec element_type(ElementList) -> Name when
+	ElementList :: [tuple()],
+	Name :: atom() | undefined.
+%% @doc retrun element name accounting, pap, chap ...
+element_type([#xmlElement{name = Name} = H | T]) ->
+	Name;
+element_type([_| T]) ->
+	element_type(T);
+element_type([]) ->
+	undefined.
 
 -type type() :: string | list | atom | float_or_integer | integer.
 
