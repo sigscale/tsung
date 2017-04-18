@@ -97,7 +97,7 @@ is configured with a `<pap>` element:
 
 #### RADIUS Accounting
 RADIUS `Accounting-Request` transactions are configured with a `<radius>`
-element having a `type=acc` attribute. A session performing An `<accounting>` element may include
+element having a `type=acc` attribute. An `<accounting>` element may include
 an `interim` attribute specifying how many interim updates to send between
 start and stop requests.
 ```xml
