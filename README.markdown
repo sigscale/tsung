@@ -173,9 +173,9 @@ The example below shows how to configure an EAP-PWD transaction by repeating
 RADIUS access requests while the AAA server replies with challenge responses,
 ending when EAP indicates the final response:
 ```xml
-<transaction name="pwd">
+<transaction name="eap-pwd">
     <repeat name="pwd_repeat" max_repeat="4000">
-        <request subst='true'>
+        <request>
             <radius type="auth" shared_secret="helga1989" username="john" result_var="result">
                 <eap_pwd cb_mod="ts_auth_pwd" password="12345"></eap_pwd>
             </radius>
