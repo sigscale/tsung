@@ -184,3 +184,74 @@ ending when EAP indicates the final response:
 </repeat>
 ```
 
+# Build & Install
+The below step-by-step instructions should work on Ubuntu 16.10. 
+
+### Install required packages
+```bash
+sudo apt install git autoconf libtool make libssl-dev erlang
+erlang-mochiweb nodejs-legacy npm build-essential debhelper
+python-matplotlib gnuplot libtemplate-perl
+sudo npm install bower -g
+```
+
+### Checkout radierl application from repository
+```bash
+git clone https://github.com/sigscale/radierl.git
+cd radierl
+```
+
+### Build radierl application
+```bash
+aclocal; autoheader; autoconf; libtoolize --automake; automake --add-missing
+mkdir ../radierl.build
+cd ../radierl.build
+../radierl/configure
+make
+```
+
+### Install radierl application
+```bash
+sudo make install
+cd
+```
+
+## Checkout ocs application from repository
+```bash
+git clone https://github.com/sigscale/ocs.git
+cd ocs
+```
+
+## Build ocs application
+```bash
+aclocal; autoheader; autoconf; libtoolize --automake; automake --add-missing
+mkdir ../ocs.build
+cd ../ocs.build
+# correct mochiweb version
+sudo mv /usr/lib/erlang/lib/mochiweb /usr/lib/erlang/lib/mochiweb-2.15.0
+../ocs/configure
+make
+```
+
+## Install ocs application
+```bash
+sudo make install
+```
+
+## Checkout tsung application from repository
+```bash
+gcloud source repos clone tsung-vnf --project=tsung-163204
+cd tsung-vnf
+```
+
+## Build tsung application
+```bash
+./configure
+make
+```
+
+## Install tsung application
+```bash
+sudo make install
+```
+
