@@ -236,6 +236,7 @@ make
 ## Install ocs application
 ```bash
 sudo make install
+cd
 ```
 
 ## Checkout tsung application from repository
