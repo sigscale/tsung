@@ -114,7 +114,7 @@ start and stop requests.
 The above examples use static usernames and passwords however they may also
 be provided through
 [dynamic substitution](http://tsung.erlang-projects.org/user_manual/conf-advanced-features.html#dynamic-substitutions)
-as shown in the example below:
+as shown in the example below where a `credentials.csv` file is consulted and a random row is selected:
 ```xml
 <setdynvars sourcetype="file" fileid="credentials" delimiter="," order="random">
     <var name="username" />
