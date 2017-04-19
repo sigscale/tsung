@@ -23,8 +23,8 @@ The system under test (SUT) is defined in the `<servers>` stanza with each
 host port defined in a `<server>` element. A RADIUS example follows:
 ```xml
 <servers>
-    <server host="ocs" port="1812" type="udp""></server>
-    <server host="ocs" port="1813" type="udp"></server>
+    <server host="ocs" port="1812" type="udp" />
+    <server host="ocs" port="1813" type="udp" />
 </servers>
 ```
 
@@ -35,9 +35,9 @@ controller node is the one Tsung was started on. Other nodes are started
 automatically using `rsh`:
 ```xml
 <clients>
-    <client host="tsung-slave-1"/>
-    <client host="tsung-slave-2"/>
-    <client host="tsung-slave-3"/>
+    <client host="tsung-slave-1" />
+    <client host="tsung-slave-2" />
+    <client host="tsung-slave-3" />
 </clients>
 ```
 
@@ -49,10 +49,10 @@ in the `<load>` stanza which defines the "load progression":
 ```xml
 <load>
     <arrivalphase phase="1" duration="10" unit="minute">
-        <users maxnumber="100" arrivalrate="5" unit="second"></users>
+        <users maxnumber="100" arrivalrate="5" unit="second" />
     </arrivalphase>
     <arrivalphase phase="2" duration="1440" unit="minute">
-        <users maxnumber="150" arrivalrate="1" unit="second"></users>
+        <users maxnumber="150" arrivalrate="1" unit="second" />
     </arrivalphase>
 </load>
 ```
@@ -89,7 +89,7 @@ is configured with a `<pap>` element:
 <transaction name="auth-simple">
     <request>
         <radius type="auth" secret="helga1989" username="john">
-            <pap cb_mod='ts_auth_pap' password="12345"></pap>
+            <pap cb_mod="ts_auth_pap" password="12345" />
         </radius>
     </request>
 </transaction>
@@ -104,7 +104,7 @@ start and stop requests.
 <transaction name="accounting">
     <request>
         <radius type="acc" secret="helga1989" username="john">
-             <accounting cb_mod="ts_accounting" interim="5"></accounting>
+             <accounting cb_mod="ts_accounting" interim="5" />
         </radius>
     </request>
 </transaction>
@@ -121,9 +121,9 @@ as shown in the example below where a `credentials.csv` file is consulted and a 
     <var name="password" />
 </setdynvars>
 <transaction name="auth-simple">
-    <request subst='true'>
+    <request subst="true">
         <radius type="auth" secret="helga1989" username="%%_username%%">
-            <pap cb_mod='ts_auth_pap' password="%%_password%%"></pap>
+            <pap cb_mod="ts_auth_pap" password="%%_password%%" />
         </radius>
     </request>
 </transaction>
@@ -139,15 +139,15 @@ Therefore a scenario configuration for RADIUS will typically use a
 element within a `<session>`:
 ```xml
 <session weight="1" name="simple-auth" type="ts_radius">
-    <repeat name="nas-simple" max_repeat="10000000" >
+    <repeat name="nas-simple" max_repeat="10000000">
         <transaction name="auth-simple">
             <request>
                 <radius type="auth" secret="helga1989" username="john">
-                    <pap cb_mod='ts_auth_pap' password="12345"></pap>
+                    <pap cb_mod="ts_auth_pap" password="12345" />
                 </radius>
             </request>
         </transaction>
-    <while var="username" neq="done"/>
+    <while var="username" neq="done" />
     </repeat>
 </session>
 ```
@@ -177,10 +177,10 @@ ending when EAP indicates the final response:
     <repeat name="pwd_repeat" max_repeat="4000">
         <request>
             <radius type="auth" shared_secret="helga1989" username="john" result_var="result">
-                <eap_pwd cb_mod="ts_auth_pwd" password="12345"></eap_pwd>
+                <eap_pwd cb_mod="ts_auth_pwd" password="12345" />
             </radius>
         </request>
-        <while var="result" eq="challenge"/>
+        <while var="result" eq="challenge" />
 </repeat>
 ```
 
