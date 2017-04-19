@@ -45,7 +45,7 @@
             </setdynvars>
             <transaction name="authentication_simple">
                <request subst='true'>
-                  <radius type="auth" secret="helga1989" auth_type="pap" username="%%_username%%" min="50" max="100" random="true">
+                  <radius type="auth" secret="helga1989" username="%%_username%%" min="50" max="100" random="true">
                      <pap cb_mod='ts_auth_pap' password="%%_password%%"></pap>
                   </radius>
                </request>
@@ -61,7 +61,7 @@
             </setdynvars>
             <transaction name="accounting">
                <request subst='true'>
-                  <radius type="acc" acc_type = "start" secret="helga1989" username="%%_username%%" min="50" max="200" random="true">
+                  <radius type="acc" secret="helga1989" username="%%_username%%" min="50" max="200" random="true">
                      <accounting cb_mod="ts_accounting"></accounting>
                   </radius>
                </request>
