@@ -53,11 +53,10 @@ parse_config(Element = #xmlElement{name = radius, attributes = Attrs},
 		{auth, eap_ttls} ->
 			todo
 	end,
-	TTVal = ts_config:getAttr(integer, Attrs, value, undefined),
+	Delay = ts_config:getAttr(string, Attrs, delay, undefined),
 	TMin = ts_config:getAttr(integer, Attrs, min, undefined),
 	TMax = ts_config:getAttr(integer, Attrs, max, undefined),
-	Random = ts_config:getAttr(atom, Attrs, random, false),
-	NewConfig = set_thinktime({TTVal, TMin, TMax, Random}, Tab, Id, CurS, Config),
+	NewConfig = set_thinktime({Delay, TMin, TMax}, Tab, Id, CurS, Config),
 	Msg=#ts_request{ack = parse,
 						subst   = SubstFlag,
 						match   = MatchRegExp,
@@ -121,29 +120,27 @@ getAttr(_, [], _, _, Default) ->
 -type tab() :: atom() | tid().
 -opaque tid() :: integer().
 
--spec set_thinktime({Value, Min, Max, Random}, Tab, Id, CurS, Config) ->
+-spec set_thinktime({Delay, Min, Max}, Tab, Id, CurS, Config) ->
 		NewConfig when
-	Value :: integer(),
+	Delay :: random | string(),
 	Min :: integer(),
 	Max :: integer(),
-	Random :: boolean(),
 	Tab :: tab(),
 	Id :: integer(),
 	CurS :: #session{},
 	Config :: #config{},
 	NewConfig :: #config{}.
 %% @doc set thinktime if only define in radius element
-set_thinktime({undefined, undefined, undefined, _}, _Tab, _Id,  _CurS, Config) ->
+set_thinktime({undefined, undefined, undefined}, _Tab, _Id,  _CurS, Config) ->
 	Config;
-set_thinktime({undefined, Min, Max, _}, Tab, Id, CurS, Config) ->
+set_thinktime({random, undefined, undefined}, _Tab, _Id, _CurS, _Config) ->
+	Config;
+set_thinktime({random, Min, Max}, Tab, Id, CurS, Config) ->
 	Think = {range, Min, Max},
 	ets:insert(Tab,{{CurS#session.id, Id+1},{thinktime, Think}}),
-	Config#config{curid = Id +1};
-set_thinktime({Val, undefined, undefined, true}, Tab, Id, CurS, Config) ->
-	Think = {random, Val},
+	Config#config{curid = Id + 1};
+set_thinktime({Delay, undefined, undefined}, Tab, Id, CurS, Config) ->
+	Think = list_to_integer(Delay)
 	ets:insert(Tab,{{CurS#session.id, Id+1},{thinktime, Think}}),
-	Config#config{curthink = 1, curid = Id +1};
-set_thinktime({Val, undefined, undefined, false}, Tab, Id, CurS, Config) ->
-	ets:insert(Tab,{{CurS#session.id, Id+1},{thinktime, Val}}),
-	Config#config{curthink = 1, curid = Id +1}.
+	Config#config{curthink = 1, curid = Id + 1}.
 
