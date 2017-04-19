@@ -30,23 +30,26 @@ parse_config(Element = #xmlElement{name = radius, attributes = Attrs},
 	SessionData = case {RadType, ElementType} of
 		{acc, _} ->
 			ResultVar = ts_config:getAttr(atom, Attrs, result_var, none),
+			Port = ts_config:getAttr(integer, Attrs, port, 1813),
 			CbMod = getAttr(atom, Element#xmlElement.content, accounting, cb_mod),
 			Counter = getAttr(integer,
 					Element#xmlElement.content, accounting, counter, 3),
-			DefParams#radius_request{cb_mod = CbMod,
-					counter = Counter, result_var = {var, ResultVar}};
+			DefParams#radius_request{cb_mod = CbMod, counter = Counter,
+					port = Port, result_var = {var, ResultVar}};
 		{auth, pap}  ->
+			Port = ts_config:getAttr(integer, Attrs, port, 1812),
 			ResultVar = ts_config:getAttr(atom, Attrs, result_var, none),
 			CbMod = getAttr(atom, Element#xmlElement.content, pap, cb_mod),
 			Password = getAttr(string, Element#xmlElement.content, pap, password),
 			DefParams#radius_request{auth_type = pap, cb_mod = CbMod,
-					password = Password, result_var = {var, ResultVar}};
+					port = Port, password = Password, result_var = {var, ResultVar}};
 		{auth, eap_pwd} ->
+			Port = ts_config:getAttr(integer, Attrs, port, 1812),
 			ResultVar = ts_config:getAttr(atom, Attrs, result_var, none),
 			CbMod = getAttr(atom, Element#xmlElement.content, eap_pwd, cb_mod),
 			Password = getAttr(string, Element#xmlElement.content, eap_pwd, password),
 			DefParams#radius_request{auth_type = 'eap-pwd', cb_mod = CbMod,
-				password = Password, result_var = {var, ResultVar}};
+					port = Port, password = Password, result_var = {var, ResultVar}};
 		{auth, chap} ->
 			todo;
 		{auth, eap_ttls} ->
