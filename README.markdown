@@ -241,8 +241,8 @@ cd
 
 ## Checkout tsung application from repository
 ```bash
-gcloud source repos clone tsung-vnf --project=tsung-163204
-cd tsung-vnf
+git clone https://github.com/sigscale/tsung.git
+cd tsung
 ```
 
 ## Build tsung application
