@@ -13,6 +13,7 @@
 
 -record(radius_request,
 			{type :: auth | acc,
+			port :: integer(),
 			username :: string() | binary(),
 			anon_name :: string() | binary(),
 			password :: string() | binary(),
@@ -21,7 +22,6 @@
 			auth_type = undefined :: undefined | pap | eap_pwd,
 			acc_type = start :: start | interim | stop,
 			counter = 3 :: integer(),
-			servers :: [tuple()],
 			result_var = "challenge" :: string()}).
 
 -record(radius_session,

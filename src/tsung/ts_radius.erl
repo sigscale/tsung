@@ -271,31 +271,9 @@ decode_buffer(Buffer, {}) ->
 %% @doc Add dynamic parameters to build the message
 add_dynparams(_,[], Param, _Host) ->
     Param;
-add_dynparams(Subst, {DynVars, _Session}, OldReq, Host) ->
-	add_dynparams1(Subst, OldReq, Host, DynVars).
-%% @hidden
-add_dynparams1(Subst, #radius_request{type = auth} = Param,
-		{"authentication", _, _}, DynVars) ->
-	add_dynparams2(Subst, Param, DynVars);
-add_dynparams1(Subst, #radius_request{type = acc} = Param,
-		{"accounting", _, _}, DynVars) ->
-	add_dynparams2(Subst, Param, DynVars);
-add_dynparams1(Subst, #radius_request{type = auth, servers = Servers}
-		= Param, _, DynVars) ->
-	{_, A, P, Proto, _} = lists:keyfind("authentication", 2, Servers),
-	NewServer = {A, P, Proto},
-	NParam = add_dynparams2(Subst, Param, DynVars),
-	{NParam, NewServer};
-add_dynparams1(Subst, #radius_request{type = acc, servers = Servers}
-		= Param, _, DynVars) ->
-	{_, A, P, Proto, _} = lists:keyfind("accounting", 2, Servers),
-	NewServer = {A, P, Proto},
-	NParam = add_dynparams2(Subst, Param, DynVars),
-	{NParam, NewServer}.
-%% @hidden
-add_dynparams2(true, Param, DynVars) ->
+add_dynparams(true, {DynVars, _Session}, Param, _Host) ->
 	subst(Param, DynVars);
-add_dynparams2(_, Param, _DynVars) ->
+add_dynparams(true, {DynVars, _Session}, Param, _Host) ->
 	Param.
 
 -spec subst(Param, DynVars) ->
