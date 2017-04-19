@@ -19,15 +19,14 @@
 parse_config(Element = #xmlElement{name=dyn_variable}, Conf = #config{}) ->
 	ts_config:parse(Element,Conf);
 parse_config(Element = #xmlElement{name = radius, attributes = Attrs},
-		Config=#config{curid = Id, session_tab = Tab, servers = Servers,
-		sessions = [CurS | _], dynvar = DynVar, subst = SubstFlag,
-		match = MatchRegExp}) ->
+		Config=#config{curid = Id, session_tab = Tab, sessions = [CurS | _],
+		dynvar = DynVar, subst = SubstFlag, match = MatchRegExp}) ->
 	UserName = ts_config:getAttr(string, Attrs, username, undefined),
 	Secret = ts_config:getAttr(string, Attrs, secret, undefined),
 	RadType = ts_config:getAttr(atom, Attrs, type, undefined),
 	ElementType = element_type(Element#xmlElement.content),
 	DefParams = #radius_request{type = RadType,
-			username = UserName, servers = Servers, secret = Secret},
+				username = UserName, secret = Secret},
 	SessionData = case {RadType, ElementType} of
 		{acc, _} ->
 			ResultVar = ts_config:getAttr(atom, Attrs, result_var, none),
