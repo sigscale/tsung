@@ -159,7 +159,7 @@ RADIUS sessions are long lived the `<radius>` element supports attributes to
 control inter-request timing. In the example below a random 50-200ms delay between
 requests will be used:
 ```xml
-<radius type="auth" secret="helga1989" sername="john" min="50" max="200" random="true">
+<radius type="auth" secret="helga1989" username="john" delay="random" min="50" max="200">
 ```
 
 ## Extensible Authentication Protocol (EAP)
@@ -185,13 +185,11 @@ ending when EAP indicates the final response:
 ```
 
 # Build & Install
-The below step-by-step instructions should work on Ubuntu 16.10. 
+The below step-by-step instructions should work on Ubuntu 16.04/16.10. 
 
 ### Install required packages
 ```bash
-sudo apt install git autoconf libtool make libssl-dev erlang
-erlang-mochiweb nodejs-legacy npm build-essential debhelper
-python-matplotlib gnuplot libtemplate-perl
+sudo apt install git autoconf libtool make libssl-dev erlang erlang-mochiweb nodejs-legacy npm python-matplotlib gnuplot libtemplate-perl
 sudo npm install bower -g
 ```
 
@@ -228,7 +226,8 @@ aclocal; autoheader; autoconf; libtoolize --automake; automake --add-missing
 mkdir ../ocs.build
 cd ../ocs.build
 # correct mochiweb version
-sudo mv /usr/lib/erlang/lib/mochiweb /usr/lib/erlang/lib/mochiweb-2.15.0
+MochiVsn=`sed -nr 's/^[ \t]*\{vsn, *"([0-9.]+)"}, */\1/p' /usr/lib/erlang/lib/mochiweb/ebin/mochiweb.app`
+sudo mv /usr/lib/erlang/lib/mochiweb /usr/lib/erlang/lib/mochiweb-${MochiVsn}
 ../ocs/configure
 make
 ```
