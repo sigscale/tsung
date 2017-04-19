@@ -271,9 +271,23 @@ decode_buffer(Buffer, {}) ->
 %% @doc Add dynamic parameters to build the message
 add_dynparams(_,[], Param, _Host) ->
     Param;
-add_dynparams(true, {DynVars, _Session}, Param, _Host) ->
+add_dynparams(Subst, {DynVars, _Session}, OldReq, Host) ->
+	add_dynparams1(Subst, OldReq, Host, DynVars).
+%% @hidden
+add_dynparams1(Subst, #radius_request{type = auth, port = Port}
+		= Param, {Address, _, Proto}, DynVars) ->
+	NewServer = {Address, Port, Proto},
+	NParam = add_dynparams2(Subst, Param, DynVars),
+	{NParam, NewServer};
+add_dynparams1(Subst, #radius_request{type = acc, port = Port}
+		= Param, {Address, _, Proto}, DynVars) ->
+	NewServer = {Address, Port, Proto},
+	NParam = add_dynparams2(Subst, Param, DynVars),
+	{NParam, NewServer}.
+%% @hidden
+add_dynparams2(true, Param, DynVars) ->
 	subst(Param, DynVars);
-add_dynparams(true, {DynVars, _Session}, Param, _Host) ->
+add_dynparams2(_, Param, _DynVars) ->
 	Param.
 
 -spec subst(Param, DynVars) ->
