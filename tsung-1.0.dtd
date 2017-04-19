@@ -500,6 +500,7 @@ repeat | if | change_type | foreach | set_option | interaction )*>
 <!ELEMENT radius (if*, (accounting | pap | chap | eap_pwd | eap_ttls))>
 <!ATTLIST radius
 	type (auth | acc) #REQUIRED
+	port NMTOKEN #IMPLIED 
 	secret CDATA #IMPLIED
 	username CDATA #REQUIRED
 	delay CDATA #IMPLIED
