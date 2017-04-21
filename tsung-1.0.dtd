@@ -499,7 +499,7 @@ repeat | if | change_type | foreach | set_option | interaction )*>
 <!-- Radius Plugin !-->
 <!ELEMENT radius (if*, (accounting | pap | chap | eap_pwd | eap_ttls))>
 <!ATTLIST radius
-	type (auth | acc) #REQUIRED
+	type (auth | acct) #REQUIRED
 	port NMTOKEN #IMPLIED 
 	secret CDATA #IMPLIED
 	username CDATA #REQUIRED
