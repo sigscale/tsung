@@ -8,8 +8,7 @@
 
 -record(acc_session,
 			{username,
-			type = start :: start | interim | stop,
-			counter = 0}).
+			type = start :: start | interim | stop}).
 
 -record(radius_request,
 			{type :: auth | acc,
@@ -21,7 +20,6 @@
 			cb_mod :: atom(),
 			auth_type = undefined :: undefined | pap | eap_pwd,
 			acc_type = start :: start | interim | stop,
-			counter = 3 :: integer(),
 			result_var = "challenge" :: string()}).
 
 -record(radius_session,
