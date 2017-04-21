@@ -32,9 +32,7 @@ parse_config(Element = #xmlElement{name = radius, attributes = Attrs},
 			ResultVar = ts_config:getAttr(atom, Attrs, result_var, none),
 			Port = ts_config:getAttr(integer, Attrs, port, 1813),
 			CbMod = getAttr(atom, Element#xmlElement.content, accounting, cb_mod),
-			Counter = getAttr(integer,
-					Element#xmlElement.content, accounting, counter, 3),
-			DefParams#radius_request{cb_mod = CbMod, counter = Counter,
+			DefParams#radius_request{cb_mod = CbMod,
 					port = Port, result_var = {var, ResultVar}};
 		{auth, pap}  ->
 			Port = ts_config:getAttr(integer, Attrs, port, 1812),
