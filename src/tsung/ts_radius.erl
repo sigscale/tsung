@@ -77,8 +77,7 @@ get_message(#radius_request{type = acct, username = "$end_of_table"} = Data,
 	get_message3(Data, NewState);
 get_message(#radius_request{type = acct} = Data,
 		#state_rcv{session = #radius_session{username = PrevUser, data =
-		#accounting{type = interim}
-		= Session} = State) ->
+		#accounting{type = interim} = Session}} = State) ->
 	NextUser = case radius_lib:get_user(next, ID, PrevUser) of
 		'$end_of_table' ->
 			radius_lib:get_user(first, ID);
@@ -97,7 +96,7 @@ get_message(#radius_request{type = acct} = Data,
 	NewState = State#state_rcv{session = NewSession},
 	get_message3(Data, NewState);
 get_message(#radius_request{type = acct} = Data, #state_rcv{session =
-		#radius_session{username = PrevUser, data = #accounting{type = stop,
+		#radius_session{username = PrevUser, data = #accounting{type = stop
 		}} = Session} = State) ->
 	case radius_lib:get_user(next, ID, PrevUser) of
 		'$end_of_table' ->
@@ -113,7 +112,7 @@ get_message(#radius_request{type = acct} = Data, #state_rcv{session =
 			get_message3(Data, NewState)
 	end;
 get_message(#radius_request{type = acct, username = '$end_of_table'} = Data,
-		#state_rcv{session = #radius_session{data = #accounting{type = stop,
+		#state_rcv{session = #radius_session{data = #accounting{type = stop
 		} = Acc} = Session} = State) ->
 	User = radius_lib:get_user(next_chunk, ID, 100),
 	NewSession = Session#radius_session{username = User,
@@ -123,11 +122,11 @@ get_message(#radius_request{type = acct, username = '$end_of_table'} = Data,
 get_message(Data, State) ->
 	get_message3(Data, State).
 %% @hidden
-get_message1(Type, #state_rcv{session = #radius_session{dynvars = DynVars,
-		ip = {IP, _} = Session}} = State) ->
+get_message1(Type, #state_rcv{session = Session ,dynvars = DynVars,
+		ip = {IP, _}} = State) ->
 	{ok, ID} = ts_dynvars:lookup(tsung_userid, DynVars),
 	{ok, CHost} = ts_utils:node_to_hostname(node()),
-	NasID = CHost ++ Type ++ interger_to_list(ID),
+	NasID = CHost ++ Type ++ integer_to_list(ID),
 	Tab = list_to_existing_atom(NasID),
 	{ok, NTab} = radius_lib:install_db(Type, self(), NasID, Tab),
 	State#state_rcv{session =
@@ -216,12 +215,12 @@ parse2(State, Opts, Close) ->
 	parse3(State, Opts, Close).
 %% @hidden
 parse3(#state_rcv{request = #ts_request{param = #radius_request{type = auth}},
-		session = #radius_session{tab_id = Tab, NasID}} = State, Opts, Close) ->
+		session = #radius_session{tab_id = Tab, nas_id = NasID}} = State, Opts, Close) ->
 	case radius_lib:transfer_ownsership(Tab, NasID) of
 		transfered ->
 			parse4(State, Opts, Close); %% @TODO close socket
 		own_by_me ->
-			parse4(State, Opts, Close); 
+			parse4(State, Opts, Close) 
 	end.
 %% @hidden
 parse4(#state_rcv{ack_done = true, dynvars = DynVars, request =
