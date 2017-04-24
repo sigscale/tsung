@@ -52,7 +52,8 @@ install_db("acct", Pid, Tab) ->
 		[Proc] ->
 			case global:set_lock(Proc, Tab) of
 				true ->
-					ets:new(Tab, ?SessionTabOptions);
+					ets:new(Tab, ?SessionTabOptions),
+					pg2:leave(Pid);
 				false ->
 					install_db("acct", Pid, Tab)
 			end
