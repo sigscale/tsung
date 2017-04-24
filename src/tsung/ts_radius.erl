@@ -127,10 +127,11 @@ get_message1(Type, #state_rcv{session = #radius_session{dynvars = DynVars,
 		ip = {IP, _} = Session}} = State) ->
 	{ok, ID} = ts_dynvars:lookup(tsung_userid, DynVars),
 	{ok, CHost} = ts_utils:node_to_hostname(node()),
-	Tab = list_to_existing_atom(CHost ++ Type ++ interger_to_list(ID)),
+	NasID = CHost ++ Type ++ interger_to_list(ID),
+	Tab = list_to_existing_atom(NasID),
 	ok = radius_lib:install_db(Type, self(), Tab),
 	State#state_rcv{session =
-		Session#radius_session{tab_id = Tab}}.
+		Session#radius_session{tab_id = Tab, nas_id = NasID}}.
 %% @hidden
 get_message2(Data, RecordData, #state_rcv{session = Session} = State) ->
 	NewSession = Session#radius_session{data = RecordData},
