@@ -32,7 +32,6 @@
 			nas_id :: string() | binary(),
 			result_value :: atom(),
 			tab_id :: atom(),
-			nas_id :: string(),
 			data :: string() | binary()}).
 
 -record(pwd,
