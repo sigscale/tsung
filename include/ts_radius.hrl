@@ -10,7 +10,7 @@
 			{username,
 			type = start :: start | interim | stop}).
 -record(info,
-			{auth_user_id, acct_user_id}).
+			{auth_user_id, auth_pid, acct_user_id, acct_pid}).
 
 -record(radius_request,
 			{type :: auth | acc,

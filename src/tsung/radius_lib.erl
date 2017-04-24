@@ -44,7 +44,7 @@ install_db("auth", Pid, Tab) ->
 			install_db("auth", Pid, Tab);
 		ok ->
 			true = ets:new(Tab, ?SessionTabOptions]),
-			ets:insert(Tab, #info{auth_user_id = Tab}),
+			ets:insert(Tab, #info{auth_user_id = Tab, auth_pid = Pid}),
 			{ok, Tab}
 	end;
 install_db("acct", Pid, Tab) ->
@@ -58,7 +58,7 @@ install_db("acct", Pid, Tab) ->
 						{ok, T} ->
 							case ets:lookup(T, T) of
 								[#info{} = Info] ->
-									ets:insert(T, Info{acct_user_id = Tab}),
+									ets:insert(T, Info{acct_user_id = Tab, acct_pid = Pid}),
 									pg2:leave(Pid);
 									{ok, T};
 								[] ->
