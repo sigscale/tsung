@@ -31,10 +31,11 @@ user1(ID, {username, PrevUser}) ->
 %-----------------------------------------------------------------
 
 -spec install_db(Type, Pid, Tab) ->
-		ok | {error, Reason} when
+		{ok, Result} | {error, Reason} when
 	Type :: string(),
 	Pid :: pid(),
 	Tab :: atom(),
+	Result :: atom(),
 	Reason :: term().
 install_db("auth", Pid, Tab) ->
 	case pg2:join(auth, Pid) of
@@ -43,7 +44,7 @@ install_db("auth", Pid, Tab) ->
 			install_db("auth", Pid, Tab);
 		ok ->
 			true = ets:new(Tab, ?SessionTabOptions]),
-			ok
+			{ok, Tab}
 	end;
 install_db("acct", Pid, Tab) ->
 	case pg2:get_closest_pid(auths_available) of
@@ -52,8 +53,12 @@ install_db("acct", Pid, Tab) ->
 		Proc ->
 			case global:set_lock(Proc, Tab) of
 				true ->
-					ets:new(Tab, ?SessionTabOptions),
-					pg2:leave(Pid);
+					case find_table(Proc) of
+						{ok, T} ->
+							pg2:leave(Pid);
+							{ok, T};
+						not_found ->
+							{error, not_found}
 				false ->
 					install_db("acct", Pid, Tab)
 			end
@@ -147,3 +152,16 @@ authenticated_users(Tab, ChunkSize) ->
 		{aborted, Reason} ->
 			throw(Reason)
 	end.
+
+find_table(OP) ->
+	{ok, CHost} = ts_utils:node_to_hostname(node()),
+	InetTabList = [atom_to_list(Tab) || Tab <- ets:all(), is_atom(Tab)],
+	AuthTabs = [{Tab, ets:info(list_to_atom(Tab), owner)} || CHost ++ _ = Tab <- InetTables]
+	find_tab(OP, InetTabList).
+%% @hidden
+find_table(OP, [{Tab, OP} | _]) ->
+	Tab;
+find_table(OP, [_ | T]) ->
+	find_table(OP, T);
+find_table(_OP, []) ->
+	not_found.
