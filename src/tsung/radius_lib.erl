@@ -3,7 +3,7 @@
 
 -export([install_db/3]).
 -export([user/1]).
--export([register_user/2, get_user/2, get_user/3]).
+-export([register_user/2, transfer_ownsership/2, get_user/2, get_user/3]).
 
 -include("ts_radius.hrl").
 
@@ -81,6 +81,21 @@ register_user(Tab, User) when is_binary(User)->
 register_user(Tab, User) when is_list(User) ->
 	ets:insert(Tab, #registered{username = User}),
 	ok.
+
+-spec transfer_ownsership(Tab, NasID) ->
+		own_by_me | tranfered when
+	Tab :: atom(),
+	NasID :: string() | atom().
+transfer_ownsership(Tab, NasID) ->
+	case ets:lookup(Tab, NasID) of
+		[#info{auth_user_id = NasID,
+				acct_user_id = undefined, acct_pid = undefined}] ->
+			own_by_me;
+		[#info{auth_user_id = NasID,
+				acct_pid = AcctPid}] ->
+			ets:setopts(Tab, {heir, AcctPid, []}),
+			transfered
+	end.
 
 -spec get_user(first, Tab) ->
 		User when
