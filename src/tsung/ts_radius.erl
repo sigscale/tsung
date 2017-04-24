@@ -56,10 +56,7 @@ get_message(#radius_request{type = auth, auth_type = 'eap-pwd'} = Data,
 	get_message2(Data, EapRecord, State);
 get_message(#radius_request{type = acct} = Data, #state_rcv{session =
 		#radius_session{data = undefined}} = State) ->
-	{_, ID} = lists:keyfind(tsung_userid, 1, State#state_rcv.dynvars),
-	Name = "acc_session" ++ integer_to_list(ID),
-	Tab = list_to_existing_atom(Name),
-	AccRecord = #accounting{tab_id = Tab},
+	AccRecord = #accounting{},
 	get_message2(Data, AccRecord, State);
 get_message(#radius_request{type = acct, username = "$end_of_table"} = Data,
 		#state_rcv{session = #radius_session{data = #accounting{type = start}
@@ -70,19 +67,16 @@ get_message(#radius_request{type = acct, username = "$end_of_table"} = Data,
 	NewState = State#state_rcv{session = NewSession},
 	get_message(Data, NewState);
 get_message(#radius_request{type = acct, username = "$end_of_table"} = Data,
-		#state_rcv{session = #radius_session{data = #accounting{type = interim,
-		counter = CCounter, tab_id = ID} = Acc} = Session} = State)
+		#state_rcv{session = #radius_session{data = #accounting{type = interim} = Acc} = Session} = State)
 		when Session#radius_session.username =/= "$end_of_table" ->
 	User = radius_lib:get_user(first, ID),
-	NextCounter = CCounter + 1,
-	NewAcc = Acc#accounting{counter = NextCounter},
-	NewSession = Session#radius_session{username = User, data = NewAcc},
+	NewSession = Session#radius_session{username = User},
 	NewState = State#state_rcv{session = NewSession},
 	get_message3(Data, NewState);
-get_message(#radius_request{type = acct, counter = MCounter} = Data,
+get_message(#radius_request{type = acct} = Data,
 		#state_rcv{session = #radius_session{username = PrevUser, data =
-		#accounting{type = interim, counter = CCounter, tab_id = ID}}
-		= Session} = State) when CCounter =< MCounter ->
+		#accounting{type = interim}
+		= Session} = State) ->
 	NextUser = case radius_lib:get_user(next, ID, PrevUser) of
 		'$end_of_table' ->
 			radius_lib:get_user(first, ID);
@@ -92,9 +86,8 @@ get_message(#radius_request{type = acct, counter = MCounter} = Data,
 	NewSession = Session#radius_session{username = NextUser},
 	NewState = State#state_rcv{session = NewSession},
 	get_message3(Data, NewState);
-get_message(#radius_request{type = acct, counter = MCounter} = Data,
-		#state_rcv{session = #radius_session{data = #accounting{type = interim,
-		counter = CCounter, tab_id = ID} = Acc} = Session}
+get_message(#radius_request{type = acct} = Data,
+		#state_rcv{session = #radius_session{data = #accounting{type = interim} = Acc} = Session}
 		= State) when CCounter > MCounter->
 	User = radius_lib:get_user(first, ID),
 	NewAcc = Acc#accounting{type = stop},
@@ -103,7 +96,7 @@ get_message(#radius_request{type = acct, counter = MCounter} = Data,
 	get_message3(Data, NewState);
 get_message(#radius_request{type = acct} = Data, #state_rcv{session =
 		#radius_session{username = PrevUser, data = #accounting{type = stop,
-		tab_id = ID}} = Session} = State) ->
+		}} = Session} = State) ->
 	case radius_lib:get_user(next, ID, PrevUser) of
 		'$end_of_table' ->
 			NextUser = radius_lib:get_user(next_chunk, ID, 100),
@@ -119,7 +112,7 @@ get_message(#radius_request{type = acct} = Data, #state_rcv{session =
 	end;
 get_message(#radius_request{type = acct, username = '$end_of_table'} = Data,
 		#state_rcv{session = #radius_session{data = #accounting{type = stop,
-		tab_id = ID} = Acc} = Session} = State) ->
+		} = Acc} = Session} = State) ->
 	User = radius_lib:get_user(next_chunk, ID, 100),
 	NewSession = Session#radius_session{username = User,
 			data = Acc#accounting{type = start}},
