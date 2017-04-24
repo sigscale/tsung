@@ -1,7 +1,7 @@
 -module(radius_lib).
 -author('prahveen@sigscale.org').
 
--export([install_db/3]).
+-export([install_db/4]).
 -export([user/1]).
 -export([register_user/2, transfer_ownsership/2, get_user/2, get_user/3]).
 
@@ -30,10 +30,11 @@ user1(ID, {username, PrevUser}) ->
 %% CallBack Function for RADIUS pulgin
 %-----------------------------------------------------------------
 
--spec install_db(Type, Pid, Tab) ->
+-spec install_db(Type, Pid, NasID, Tab) ->
 		{ok, Result} | {error, Reason} when
 	Type :: string(),
 	Pid :: pid(),
+	NasID :: string(),
 	Tab :: atom(),
 	Result :: atom(),
 	Reason :: term().
@@ -41,9 +42,9 @@ install_db("auth", Pid, NasID, Tab) ->
 	case pg2:join(auth, Pid) of
 		{error, {no_such_group, _}} ->
 			pg2:create(auths_available),
-			install_db("auth", Pid, Tab);
+			install_db("auth", Pid, NasID, Tab);
 		ok ->
-			true = ets:new(Tab, ?SessionTabOptions]),
+			true = ets:new(Tab, ?SessionTabOptions),
 			ets:insert(Tab, #info{auth_user_id = NasID, auth_pid = Pid}),
 			{ok, Tab}
 	end;
@@ -58,17 +59,18 @@ install_db("acct", Pid, NasID, Tab) ->
 						{ok, T} ->
 							case ets:lookup(T, atom_to_list(T)) of
 								[#info{} = Info] ->
-									ets:insert(T, Info{acct_user_id = NasID, acct_pid = Pid}),
+									ets:insert(T, Info#info{acct_user_id = NasID, acct_pid = Pid}),
 									pg2:leave(Pid),
-									global:del_lock({?MODULE, Proc});
+									global:del_lock({?MODULE, Proc}),
 									{ok, T};
 								[] ->
 									{error, not_found}
 							end;
 						not_found ->
 							{error, not_found}
+					end;
 				false ->
-					install_db("acct", Pid, Tab)
+					install_db("acct", Pid, NasID, Tab)
 			end
 	end.
 
@@ -171,8 +173,8 @@ authenticated_users(Tab, ChunkSize) ->
 find_table(OP) ->
 	{ok, CHost} = ts_utils:node_to_hostname(node()),
 	InetTabList = [atom_to_list(Tab) || Tab <- ets:all(), is_atom(Tab)],
-	AuthTabs = [{Tab, ets:info(list_to_atom(Tab), owner)} || CHost ++ _ = Tab <- InetTables]
-	find_tab(OP, InetTabList).
+	AuthTabs = [{Tab, ets:info(list_to_atom(Tab), owner)} || CHost ++ _ = Tab <- InetTables],
+	find_table(OP, InetTabList).
 %% @hidden
 find_table(OP, [{Tab, OP} | _]) ->
 	Tab;
