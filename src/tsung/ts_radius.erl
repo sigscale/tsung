@@ -53,11 +53,13 @@ get_message(#radius_request{type = acct, acct_type = start} = Data,
 get_message(#radius_request{type = auth, auth_type = 'eap-pwd'} = Data,
 		#state_rcv{session = #radius_session{data = undefined}} = State) ->
 	EapRecord = #pwd{eap_id = ?EapID},
-	get_message2(Data, EapRecord, State);
+	NewState = get_message2(Data, EapRecord, State),
+	get_message(Data, NewState);
 get_message(#radius_request{type = acct} = Data, #state_rcv{session =
 		#radius_session{data = undefined}} = State) ->
 	AccRecord = #accounting{},
-	get_message2(Data, AccRecord, State);
+	NewState = get_message2(Data, EapRecord, State),
+	get_message(Data, NewState);
 get_message(#radius_request{type = acct, username = "$end_of_table"} = Data,
 		#state_rcv{session = #radius_session{data = #accounting{type = start}
 		= Acc} = Session} = State) ->
