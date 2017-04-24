@@ -9,6 +9,8 @@
 -record(acc_session,
 			{username,
 			type = start :: start | interim | stop}).
+-record(info,
+			{auth_user_id, start_time, update_time}).
 
 -record(radius_request,
 			{type :: auth | acc,
