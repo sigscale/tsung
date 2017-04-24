@@ -49,7 +49,7 @@ install_db("acct", Pid, Tab) ->
 	case pg2:get_closest_pid(auths_available) of
 		{error, {no_process, _Name}} ->
 			{error, no_such_group};
-		[Proc] ->
+		Proc ->
 			case global:set_lock(Proc, Tab) of
 				true ->
 					ets:new(Tab, ?SessionTabOptions),
