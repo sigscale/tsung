@@ -1,7 +1,7 @@
 -module(radius_lib).
 -author('prahveen@sigscale.org').
 
--export([install_db/1]).
+-export([install_db/3]).
 -export([user/1]).
 -export([register_user/1, get_user/2, get_user/3]).
 
@@ -30,36 +30,33 @@ user1(ID, {username, PrevUser}) ->
 %% CallBack Function for RADIUS pulgin
 %-----------------------------------------------------------------
 
--spec install_db(Nodes) ->
+-spec install_db(Type, Pid, Tab) ->
 		ok | {error, Reason} when
-	Nodes :: [node()],
+	Type :: string(),
+	Pid :: pid(),
+	Tab :: atom(),
 	Reason :: term().
-install_db(Nodes) ->
-	install_db(Nodes, rpc:multicall(Nodes, mnesia, start, [])).
-%% @hidden
-install_db(Nodes, {ResL, []}) ->
-	install_db1(Nodes, lists:usort(ResL));
-install_db(_, _) ->
-	{error, bad_rpc}.
-%% @hidden
-install_db1(Nodes, [ok]) ->
-	case mnesia:create_table(?Registered,
-			[{attributes, record_info(fields, registered)},
-			{ram_copies, Nodes}]) of
-		{atomic, ok} ->
-			case mnesia:wait_for_tables([?Registered], ?Timeout) of
-				{timeout, _} ->
-					{error, timeout};
-				{error, Reason} ->
-					{error, Reason};
-				ok ->
-					ok
-			end;
-		{aborted, Reason} ->
-			{error, Reason}
+install_db("auth", Pid, Tab) ->
+	case pg2:join(auth, Pid) of
+		{error, {no_such_group, _}} ->
+			pg2:create(auth),
+			install_db("auth", Pid, Tab);
+		ok ->
+			true = ets:new(Tab, ?SessionTabOptions]),
+			ok
 	end;
-install_db1(_, [_]) ->
-	{error, bad_rpc}.
+install_db("acct", Pid, Tab) ->
+	case pg2:get_closest_pid(auth) of
+		{error, {no_process, _Name}} ->
+			install_db("acct", Pid, Tab);
+		[Proc] ->
+			case global:set_lock(Proc, Tab) of
+				true ->
+					ets:new(Tab, ?SessionTabOptions);
+				false ->
+					install_db("acct", Pid, Tab)
+			end
+	end.
 
 -spec register_user(User) ->
 		ok  | {error, Reason} when

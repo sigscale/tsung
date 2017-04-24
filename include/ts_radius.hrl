@@ -2,7 +2,7 @@
 -define(Timeout, 4000).
 -define(ChunkSize, 10).
 -define(SessionTab, accsession).
--define(SessionTabOptions, [private, named_table, {keypos, 2}]).
+-define(SessionTabOptions, [named_table, {keypos, 2}]).
 
 -record(registered, {username, password}).
 
@@ -29,6 +29,7 @@
 			mac :: string() | binary(),
 			nas_id :: string() | binary(),
 			result_value :: atom(),
+			tab_id :: atom(),
 			data :: string() | binary()}).
 
 -record(pwd,
