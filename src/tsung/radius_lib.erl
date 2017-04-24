@@ -37,17 +37,17 @@ user1(ID, {username, PrevUser}) ->
 	Tab :: atom(),
 	Result :: atom(),
 	Reason :: term().
-install_db("auth", Pid, Tab) ->
+install_db("auth", Pid, NasID, Tab) ->
 	case pg2:join(auth, Pid) of
 		{error, {no_such_group, _}} ->
 			pg2:create(auths_available),
 			install_db("auth", Pid, Tab);
 		ok ->
 			true = ets:new(Tab, ?SessionTabOptions]),
-			ets:insert(Tab, #info{auth_user_id = Tab, auth_pid = Pid}),
+			ets:insert(Tab, #info{auth_user_id = NasID, auth_pid = Pid}),
 			{ok, Tab}
 	end;
-install_db("acct", Pid, Tab) ->
+install_db("acct", Pid, NasID, Tab) ->
 	case pg2:get_closest_pid(auths_available) of
 		{error, {no_process, _Name}} ->
 			{error, no_such_group};
@@ -56,9 +56,9 @@ install_db("acct", Pid, Tab) ->
 				true ->
 					case find_table(Proc) of
 						{ok, T} ->
-							case ets:lookup(T, T) of
+							case ets:lookup(T, atom_to_list(T)) of
 								[#info{} = Info] ->
-									ets:insert(T, Info{acct_user_id = Tab, acct_pid = Pid}),
+									ets:insert(T, Info{acct_user_id = NasID, acct_pid = Pid}),
 									pg2:leave(Pid);
 									{ok, T};
 								[] ->
