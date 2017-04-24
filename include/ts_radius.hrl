@@ -11,7 +11,7 @@
 			type = start :: start | interim | stop}).
 
 -record(radius_request,
-			{type :: auth | acc,
+			{type :: auth | acct,
 			port :: integer(),
 			username :: string() | binary(),
 			anon_name :: string() | binary(),
@@ -19,7 +19,7 @@
 			secret :: string() | binary(),
 			cb_mod :: atom(),
 			auth_type = undefined :: undefined | pap | eap_pwd,
-			acc_type = start :: start | interim | stop,
+			acct_type = start :: start | interim | stop,
 			result_var = "challenge" :: string()}).
 
 -record(radius_session,

@@ -28,7 +28,7 @@ parse_config(Element = #xmlElement{name = radius, attributes = Attrs},
 	DefParams = #radius_request{type = RadType,
 				username = UserName, secret = Secret},
 	SessionData = case {RadType, ElementType} of
-		{acc, _} ->
+		{acct, _} ->
 			ResultVar = ts_config:getAttr(atom, Attrs, result_var, none),
 			Port = ts_config:getAttr(integer, Attrs, port, 1813),
 			CbMod = getAttr(atom, Element#xmlElement.content, accounting, cb_mod),
