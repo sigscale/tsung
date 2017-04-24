@@ -39,14 +39,14 @@ user1(ID, {username, PrevUser}) ->
 install_db("auth", Pid, Tab) ->
 	case pg2:join(auth, Pid) of
 		{error, {no_such_group, _}} ->
-			pg2:create(auth),
+			pg2:create(auths_available),
 			install_db("auth", Pid, Tab);
 		ok ->
 			true = ets:new(Tab, ?SessionTabOptions]),
 			ok
 	end;
 install_db("acct", Pid, Tab) ->
-	case pg2:get_closest_pid(auth) of
+	case pg2:get_closest_pid(auths_available) of
 		{error, {no_process, _Name}} ->
 			install_db("acct", Pid, Tab);
 		[Proc] ->
