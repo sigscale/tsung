@@ -48,7 +48,7 @@ install_db("auth", Pid, Tab) ->
 install_db("acct", Pid, Tab) ->
 	case pg2:get_closest_pid(auths_available) of
 		{error, {no_process, _Name}} ->
-			install_db("acct", Pid, Tab);
+			{error, no_such_group};
 		[Proc] ->
 			case global:set_lock(Proc, Tab) of
 				true ->
