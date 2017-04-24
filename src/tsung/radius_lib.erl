@@ -52,7 +52,7 @@ install_db("acct", Pid, NasID, Tab) ->
 		{error, {no_process, _Name}} ->
 			{error, no_such_group};
 		Proc ->
-			case global:set_lock(Proc, Tab) of
+			case global:set_lock({?MODULE, Proc}, Tab) of
 				true ->
 					case find_table(Proc) of
 						{ok, T} ->
