@@ -56,8 +56,14 @@ install_db("acct", Pid, Tab) ->
 				true ->
 					case find_table(Proc) of
 						{ok, T} ->
-							pg2:leave(Pid);
-							{ok, T};
+							case ets:lookup(T, T) of
+								[#info{} = Info] ->
+									ets:insert(T, Info{acct_user_id = Tab}),
+									pg2:leave(Pid);
+									{ok, T};
+								[] ->
+									{error, not_found}
+							end;
 						not_found ->
 							{error, not_found}
 				false ->
