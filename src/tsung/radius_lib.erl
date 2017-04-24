@@ -59,16 +59,17 @@ install_db("acct", Pid, Tab) ->
 			end
 	end.
 
--spec register_user(User) ->
+-spec register_user(Tab, User) ->
 		ok  | {error, Reason} when
+	Tab :: atom(),
 	User :: binary() | list(),
 	Reason :: term().
 %% @doc Register authenticated users
-register_user(User) when is_binary(User)->
-	register_user(binary_to_list(User));
-register_user(User) when is_list(User) ->
+register_user(Tab, User) when is_binary(User)->
+	register_user(Tab, binary_to_list(User));
+register_user(Tab, User) when is_list(User) ->
 	F = fun() ->
-		mnesia:write(?Registered, #registered{username = User}, write)
+		mnesia:write(Tab, #registered{username = User}, write)
 	end,
 	case mnesia:transaction(F) of
 		{atomic, ok} ->
