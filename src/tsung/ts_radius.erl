@@ -27,34 +27,7 @@ session_defaults() ->
 	NewSession :: #radius_session{} | list().
 %% @doc Initialize session information
 new_session() ->
-	Nodes = [node() | nodes()],
-	ID = {?MODULE, self()},
-	global:set_lock(ID),
-	try mnesia:table_info(?Registered, ram_copies) of
-		Nodes ->
-			case mnesia:wait_for_tables([?Registered], ?Timeout) of
-				{timeout, _} ->
-					throw(timeout);
-				{error, Reason} ->
-					throw(Reason);
-				ok ->
-					#radius_session{radius_id  = ?RadID}
-			end;
-		_ ->
-			throw(bad_nodes)
-	catch
-		exit:_ ->
-			case radius_lib:install_db(Nodes) of
-				ok ->
-					#radius_session{radius_id  = ?RadID};
-				{error, Reason} ->
-					{error, Reason}
-			end;
-		throw:Reason ->
-			exit(Reason)
-	after
-		global:del_lock(ID)
-	end.
+	#radius_session{radius_id  = ?RadID}.
 
 -spec get_message(Data, State) ->
 		{Message, Session} when
@@ -64,21 +37,31 @@ new_session() ->
 	Session :: #radius_session{}.
 %% @doc Build a message/request
 %%	CbMod:get_message/2 returns `{Msg, NewSession :: #radius_session{}}'.
-get_message(#radius_request{type = auth, auth_type = pap} = Data, State) ->
-	get_message2(Data, State);
+get_message(#radius_request{type = auth, auth_type = pap} = Data,
+		#state_rcv{session = #radius_session{tab_id = undefined},
+		dynvars = DynVars, ip = {IP, _} = Session} = State) ->
+	NewState = get_message1("auth", State),
+	get_message3(Data, NewState);
+get_message(#radius_request{type = auth, auth_type = 'eap-pwd'} = Data,
+		#state_rcv{session = #radius_session{tab_id = undefined}} = State) ->
+	NewState = get_message1("auth", State),
+	get_message(Data, NewState);
+get_message(#radius_request{type = acct, acct_type = start} = Data,
+		#state_rcv{session = #radius_session{tab_id = undefined}} = State) ->
+	NewState = get_message1("acct", State),
+	get_message(Data, NewState);
 get_message(#radius_request{type = auth, auth_type = 'eap-pwd'} = Data,
 		#state_rcv{session = #radius_session{data = undefined}} = State) ->
 	EapRecord = #pwd{eap_id = ?EapID},
-	ok = radius_lib:install_db([node()]),
-	get_message1(Data, EapRecord, State);
-get_message(#radius_request{type = acc} = Data, #state_rcv{session =
+	get_message2(Data, EapRecord, State);
+get_message(#radius_request{type = acct} = Data, #state_rcv{session =
 		#radius_session{data = undefined}} = State) ->
 	{_, ID} = lists:keyfind(tsung_userid, 1, State#state_rcv.dynvars),
 	Name = "acc_session" ++ integer_to_list(ID),
 	Tab = list_to_existing_atom(Name),
 	AccRecord = #accounting{tab_id = Tab},
-	get_message1(Data, AccRecord, State);
-get_message(#radius_request{type = acc, username = "$end_of_table"} = Data,
+	get_message2(Data, AccRecord, State);
+get_message(#radius_request{type = acct, username = "$end_of_table"} = Data,
 		#state_rcv{session = #radius_session{data = #accounting{type = start}
 		= Acc} = Session} = State) ->
 		%when Session#radius_session.username == undefined ->
@@ -86,7 +69,7 @@ get_message(#radius_request{type = acc, username = "$end_of_table"} = Data,
 	NewSession = Session#radius_session{data = NewAcc},
 	NewState = State#state_rcv{session = NewSession},
 	get_message(Data, NewState);
-get_message(#radius_request{type = acc, username = "$end_of_table"} = Data,
+get_message(#radius_request{type = acct, username = "$end_of_table"} = Data,
 		#state_rcv{session = #radius_session{data = #accounting{type = interim,
 		counter = CCounter, tab_id = ID} = Acc} = Session} = State)
 		when Session#radius_session.username =/= "$end_of_table" ->
@@ -95,8 +78,8 @@ get_message(#radius_request{type = acc, username = "$end_of_table"} = Data,
 	NewAcc = Acc#accounting{counter = NextCounter},
 	NewSession = Session#radius_session{username = User, data = NewAcc},
 	NewState = State#state_rcv{session = NewSession},
-	get_message2(Data, NewState);
-get_message(#radius_request{type = acc, counter = MCounter} = Data,
+	get_message3(Data, NewState);
+get_message(#radius_request{type = acct, counter = MCounter} = Data,
 		#state_rcv{session = #radius_session{username = PrevUser, data =
 		#accounting{type = interim, counter = CCounter, tab_id = ID}}
 		= Session} = State) when CCounter =< MCounter ->
@@ -108,8 +91,8 @@ get_message(#radius_request{type = acc, counter = MCounter} = Data,
 	end,
 	NewSession = Session#radius_session{username = NextUser},
 	NewState = State#state_rcv{session = NewSession},
-	get_message2(Data, NewState);
-get_message(#radius_request{type = acc, counter = MCounter} = Data,
+	get_message3(Data, NewState);
+get_message(#radius_request{type = acct, counter = MCounter} = Data,
 		#state_rcv{session = #radius_session{data = #accounting{type = interim,
 		counter = CCounter, tab_id = ID} = Acc} = Session}
 		= State) when CCounter > MCounter->
@@ -117,8 +100,8 @@ get_message(#radius_request{type = acc, counter = MCounter} = Data,
 	NewAcc = Acc#accounting{type = stop},
 	NewSession = Session#radius_session{username = User, data = NewAcc},
 	NewState = State#state_rcv{session = NewSession},
-	get_message2(Data, NewState);
-get_message(#radius_request{type = acc} = Data, #state_rcv{session =
+	get_message3(Data, NewState);
+get_message(#radius_request{type = acct} = Data, #state_rcv{session =
 		#radius_session{username = PrevUser, data = #accounting{type = stop,
 		tab_id = ID}} = Session} = State) ->
 	case radius_lib:get_user(next, ID, PrevUser) of
@@ -132,9 +115,9 @@ get_message(#radius_request{type = acc} = Data, #state_rcv{session =
 		NU ->
 			NewSession = Session#radius_session{username = NU},
 			NewState = State#state_rcv{session = NewSession},
-			get_message2(Data, NewState)
+			get_message3(Data, NewState)
 	end;
-get_message(#radius_request{type = acc, username = '$end_of_table'} = Data,
+get_message(#radius_request{type = acct, username = '$end_of_table'} = Data,
 		#state_rcv{session = #radius_session{data = #accounting{type = stop,
 		tab_id = ID} = Acc} = Session} = State) ->
 	User = radius_lib:get_user(next_chunk, ID, 100),
@@ -143,14 +126,23 @@ get_message(#radius_request{type = acc, username = '$end_of_table'} = Data,
 	NewState = State#state_rcv{session = NewSession},
 	get_message(Data, NewState);
 get_message(Data, State) ->
-	get_message2(Data, State).
+	get_message3(Data, State).
 %% @hidden
-get_message1(Data, RecordData, #state_rcv{session = Session} = State) ->
+get_message1(Type, #state_rcv{session = #radius_session{dynvars = DynVars,
+		ip = {IP, _} = Session}} = State) ->
+	{ok, ID} = ts_dynvars:lookup(tsung_userid, DynVars),
+	{ok, CHost} = ts_utils:node_to_hostname(node()),
+	Tab = list_to_existing_atom(CHost ++ Type ++ interger_to_list(ID)),
+	ok = radius_lib:install_db(Type, self(), Tab),
+	State#state_rcv{session =
+		Session#radius_session{tab_id = Tab}}.
+%% @hidden
+get_message2(Data, RecordData, #state_rcv{session = Session} = State) ->
 	NewSession = Session#radius_session{data = RecordData},
 	NewState = State#state_rcv{session = NewSession},
 	get_message(Data, NewState).
 %% @hidden
-get_message2(Data, State) ->
+get_message3(Data, State) ->
 	CbMod = Data#radius_request.cb_mod,
 	CbMod:get_message(Data, State).
 
