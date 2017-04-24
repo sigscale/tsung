@@ -59,7 +59,8 @@ install_db("acct", Pid, NasID, Tab) ->
 							case ets:lookup(T, atom_to_list(T)) of
 								[#info{} = Info] ->
 									ets:insert(T, Info{acct_user_id = NasID, acct_pid = Pid}),
-									pg2:leave(Pid);
+									pg2:leave(Pid),
+									global:del_lock({?MODULE, Proc});
 									{ok, T};
 								[] ->
 									{error, not_found}
