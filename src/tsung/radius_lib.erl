@@ -44,6 +44,7 @@ install_db("auth", Pid, Tab) ->
 			install_db("auth", Pid, Tab);
 		ok ->
 			true = ets:new(Tab, ?SessionTabOptions]),
+			ets:insert(Tab, #info{auth_user_id = Tab}),
 			{ok, Tab}
 	end;
 install_db("acct", Pid, Tab) ->
