@@ -38,17 +38,17 @@ user1(ID, {username, PrevUser}) ->
 	Tab :: atom(),
 	Result :: atom(),
 	Reason :: term().
-install_db("auth", Pid, NasID, Tab) ->
-	case pg2:join(auth, Pid) of
+install_db("auth", AuthPid, NasID, Tab) ->
+	case pg2:join(auth, AuthPid) of
 		{error, {no_such_group, _}} ->
 			pg2:create(auths_available),
-			install_db("auth", Pid, NasID, Tab);
+			install_db("auth", AuthPid, NasID, Tab);
 		ok ->
 			true = ets:new(Tab, ?SessionTabOptions),
-			ets:insert(Tab, #info{auth_user_id = NasID, auth_pid = Pid}),
+			ets:insert(Tab, {'$_info', NasID, AuthPid, undefined, undefined}), %% {'$_info', auth_user_id, auth_pid, acct_user_id, acct_pid}
 			{ok, Tab}
 	end;
-install_db("acct", Pid, NasID, Tab) ->
+install_db("acct", AcctPid, NasID, Tab) ->
 	case pg2:get_closest_pid(auths_available) of
 		{error, {no_process, _Name}} ->
 			{error, no_such_group};
@@ -57,12 +57,15 @@ install_db("acct", Pid, NasID, Tab) ->
 				true ->
 					case find_table(Proc) of
 						{ok, T} ->
-							case ets:lookup(T, atom_to_list(T)) of
-								[#info{} = Info] ->
-									ets:insert(T, Info#info{acct_user_id = NasID, acct_pid = Pid}),
-									pg2:leave(Pid),
+							case ets:lookup(T, '$_info') of
+								[{Key, AutherUserID, AuthPid, undefined, undefined}] ->
+									ets:insert(T, {Key, AutherUserID, AuthPid, NasID, AcctPid}),
+									pg2:leave(AuthPid),
 									global:del_lock({?MODULE, Proc}),
 									{ok, T};
+								[{_, _, AuthPid, _, _}] ->
+									pg2:leave(AuthPid),
+									install_db("acct", AcctPid, NasID, Tab);
 								[] ->
 									{error, not_found}
 							end;
@@ -70,7 +73,7 @@ install_db("acct", Pid, NasID, Tab) ->
 							{error, not_found}
 					end;
 				false ->
-					install_db("acct", Pid, NasID, Tab)
+					install_db("acct", AcctPid, NasID, Tab)
 			end
 	end.
 
@@ -85,19 +88,23 @@ register_user(Tab, User) when is_list(User) ->
 	ets:insert(Tab, #registered{username = User}),
 	ok.
 
--spec transfer_ownsership(Tab, NasID) ->
-		own_by_me | tranfered when
+-spec transfer_ownsership(Tab) ->
+		ok when
 	Tab :: atom(),
 	NasID :: string() | atom().
-transfer_ownsership(Tab, NasID) ->
-	case ets:lookup(Tab, NasID) of
-		[#info{auth_user_id = NasID,
-				acct_user_id = undefined, acct_pid = undefined}] ->
-			own_by_me;
-		[#info{auth_user_id = NasID,
-				acct_pid = AcctPid}] ->
-			ets:setopts(Tab, {heir, AcctPid, []}),
-			transfered
+transfer_ownsership(Tab) ->
+	case ets:lookup(Tab, '$_info') of
+		[{_, _, _, _, self()}] ->
+			ok;
+		[{_, _, _, undefined, undefined}] ->
+			ok;
+		[{_Key, AutherUserID, AuthPid, AcctUserID, AcctPid}] ->
+			ets:setopts(Tab, {heir, AcctPid,
+				[io:fwrite("Successfully transfer ownership {~p, ~p}
+				to {~p, ~p} ~n", [AutherUserID, AuthPid, AcctUserID, AcctPid])]}),
+			ok;
+		[] ->
+			ok
 	end.
 
 -spec get_user(first, Tab) ->
@@ -172,9 +179,10 @@ authenticated_users(Tab, ChunkSize) ->
 
 find_table(OP) ->
 	{ok, CHost} = ts_utils:node_to_hostname(node()),
-	InetTabList = [atom_to_list(Tab) || Tab <- ets:all(), is_atom(Tab)],
-	AuthTabs = [{Tab, ets:info(list_to_atom(Tab), owner)} || CHost ++ _ = Tab <- InetTables],
-	find_table(OP, InetTabList).
+	StringTabs = [atom_to_list(Tab) || Tab <- ets:all(), is_atom(Tab)],
+	AvailableTables = [Table || CHost ++ _ = Table <- StringTables],
+	AuthTabs = [{Table, ets:info(list_to_existing_atom(Table), owner)} || Table <- AvailableTables],
+	find_table(OP, AuthTabs).
 %% @hidden
 find_table(OP, [{Tab, OP} | _]) ->
 	Tab;

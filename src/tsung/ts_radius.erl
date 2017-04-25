@@ -214,23 +214,14 @@ parse2(#state_rcv{session = #radius_session{result_value = "success",
 parse2(State, Opts, Close) ->
 	parse3(State, Opts, Close).
 %% @hidden
-parse3(#state_rcv{request = #ts_request{param = #radius_request{type = auth}},
-		session = #radius_session{tab_id = Tab, nas_id = NasID}} = State, Opts, Close) ->
-	case radius_lib:transfer_ownsership(Tab, NasID) of
-		transfered ->
-			parse4(State, Opts, Close); %% @TODO close socket
-		own_by_me ->
-			parse4(State, Opts, Close) 
-	end.
-%% @hidden
-parse4(#state_rcv{ack_done = true, dynvars = DynVars, request =
+parse3(#state_rcv{ack_done = true, dynvars = DynVars, request =
 		#ts_request{param = #radius_request{result_var = VarName}},
 		session = #radius_session{result_value = VarValue}}
 		= State, Opts, Close) ->
 	NewDynVars = set_dynvar(VarName, VarValue, DynVars),
 	NewState = State#state_rcv{dynvars = NewDynVars},
 	{NewState, Opts, Close};
-parse4(#state_rcv{ack_done = false} = State, Options, Close) ->
+parse3(#state_rcv{ack_done = false} = State, Options, Close) ->
 	{State, Options, Close}.
 
 -spec parse_config(Element, Conf) ->
@@ -290,8 +281,8 @@ add_dynparams2(_, Param, _DynVars) ->
 -spec terminate(State) ->
 		ok when
 	State :: #state_rcv{}.
-terminate(_State) ->
-	ok.
+terminate(#state_rcv{session = #radius_session{tab_id = Tab}}) ->
+	radius_lib:transfer_ownsership(Tab).
 
 -spec subst(Param, DynVars) ->
 		Result when
