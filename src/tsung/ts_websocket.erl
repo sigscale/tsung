@@ -41,6 +41,7 @@
          parse_bidi/2,
          parse_config/2,
          decode_buffer/2,
+			terminate/1,
          new_session/0]).
 
 %%----------------------------------------------------------------------
@@ -180,3 +181,6 @@ add_dynparams(true, {DynVars, _S},
     Param#websocket_request{path = NewPath};
 add_dynparams(_Bool, _DynData, Param, _HostData) ->
     Param#websocket_request{}.
+
+terminate(_State) ->
+	ok.

@@ -978,6 +978,8 @@ finish_session(State) ->
                           end,
                           TrList)
     end,
+    Type = State#state_rcv.clienttype,
+	 Type:terminate(State),
     ts_mon:endclient({State#state_rcv.id, ?TIMESTAMP, Elapsed}).
 
 

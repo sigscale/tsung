@@ -43,6 +43,7 @@
          parse_bidi/2,
          dump/2,
          parse_config/2,
+			terminate/1,
          decode_buffer/2,
          new_session/0]).
 
@@ -121,3 +122,6 @@ add_dynparams(_Subst, _DynData, Param, _Host) ->
 subst(Req=#raw{datasize=Size,data=Data},DynVars) ->
     Req#raw{datasize = ts_search:subst(Size, DynVars),
             data= ts_search:subst(Data, DynVars)}.
+
+terminate(_State) ->
+	ok.

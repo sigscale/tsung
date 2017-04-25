@@ -42,6 +42,7 @@
          parse_bidi/2,
          parse_config/2,
          decode_buffer/2,
+			terminate/1,
          new_session/0]).
 -export([ping_loop/3]).
 
@@ -295,6 +296,9 @@ add_dynparams(true, {DynVars, _S},
     Param#mqtt_request{topic = NewTopic};
 add_dynparams(_Bool, _DynData, Param, _HostData) ->
     Param#mqtt_request{}.
+
+terminate(_State) ->
+	ok.
 
 %%%===================================================================
 %%% Internal functions

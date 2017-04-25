@@ -34,6 +34,7 @@
          parse_bidi/2,
          parse_config/2,
          decode_buffer/2,
+			terminate/1,
          new_session/0
          ]).
 
@@ -290,4 +291,7 @@ get_message2(#ldap_request{type=add,dn=DN,attrs=Attrs}) ->
 
 get_message2(#ldap_request{type=modify,dn=DN,modifications=Modifications}) ->
     iolist_to_binary(ts_ldap_common:modify_msg(ts_msg_server:get_id(),DN,Modifications)).
+
+terminate(_State) ->
+	ok.
 

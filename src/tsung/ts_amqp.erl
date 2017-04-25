@@ -43,6 +43,7 @@
          parse_bidi/2,
          parse_config/2,
          decode_buffer/2,
+			terminate/1,
          new_session/0]).
 
 
@@ -324,6 +325,8 @@ add_dynparams(true, {DynVars, _Session},
                      exchange = SubstExchange, routing_key = SubstRoutingKey,
                      queue = SubstQueue}.
 
+terminate(_State) ->
+	ok.
 %%----------------------------------------------------------------------
 plain(none, Username, Password) ->
     <<0, Username/binary, 0, Password/binary>>.

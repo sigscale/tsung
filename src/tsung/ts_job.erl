@@ -43,6 +43,8 @@
          parse_bidi/2,
          parse_config/2,
          decode_buffer/2,
+			F
+			terminate/1,
          new_session/0]).
 
 
@@ -216,3 +218,6 @@ get_message(#job{type=oar,user=U,req=submit, name=N,script=S, resources=R, queue
     ?LOGF("Will run ~p",[Cmd],?INFO),
     Message = {os, cmd, [Cmd], length(Cmd) },
     {Message, Session#job_session{submission_time=?NOW}}.
+
+terminate(_State) ->
+	ok.

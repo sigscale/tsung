@@ -30,6 +30,7 @@
          session_defaults/0,
          parse/2,
          parse_config/2,
+			terminate/1,
          new_session/0]).
 
 %%----------------------------------------------------------------------
@@ -94,6 +95,13 @@ add_dynparams(false, DynData, Param, HostData) ->
 init_dynparams() ->
     todo.
 
+%%----------------------------------------------------------------------
+%% Function: terminate/1
+%% Purpose:  clean up session
+%% Returns:  ok
+%%----------------------------------------------------------------------
+terminate(_State) ->
+		ok.
 %%----------------------------------------------------------------------
 %% Function: subst/2
 %% Purpose: Replace on the fly dynamic element of the request.

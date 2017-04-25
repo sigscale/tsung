@@ -43,6 +43,7 @@
          parse_bidi/2,
          parse_config/2,
          decode_buffer/2,
+			terminate/1,
          new_session/0]).
 
 
@@ -272,4 +273,5 @@ get_message2(#fs{command=stat, path=Path}) ->
 get_message2(#fs{command=write,path=Path, size=Size}) ->
     {file,write_file,[Path,ts_utils:urandomstr(Size),[raw]],Size}.
 
-
+terminate(_State) ->
+	ok.
