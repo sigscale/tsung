@@ -5,7 +5,7 @@
 
 -export([session_defaults/0, new_session/0, get_message/2, parse/2,
 			parse_config/2, parse_bidi/2, dump/2, decode_buffer/2,
-			add_dynparams/4, subst/2]).
+			add_dynparams/4, terminate/1, subst/2]).
 
 -include("ts_profile.hrl").
 -include("ts_config.hrl").
@@ -286,6 +286,12 @@ add_dynparams2(true, Param, DynVars) ->
 	subst(Param, DynVars);
 add_dynparams2(_, Param, _DynVars) ->
 	Param.
+
+-spec terminate(State) ->
+		ok when
+	State :: #state_rcv{}.
+terminate(_State) ->
+	ok.
 
 -spec subst(Param, DynVars) ->
 		Result when

@@ -48,6 +48,7 @@
          parse_config/2,
          to_pairs/1,
          find_pair/2,
+			terminate/1,
          decode_buffer/2,
          new_session/0]).
 
@@ -242,7 +243,8 @@ subst(Req=#pgsql_request{sql=SQL,database=DB,username=User,passwd=Passwd, parame
                                  end,
                       database=ts_search:subst(DB, DynVars)
                      }.
-
+terminate(_State) ->
+	ok.
 
 %%% -- Internal funs --------------------
 

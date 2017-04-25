@@ -37,6 +37,7 @@ behaviour_info(callbacks) ->
      {parse_bidi, 2},
      {parse_config, 2},
      {decode_buffer, 2},
+	  {terminate, 1},
      {new_session, 0}];
 behaviour_info(_Other) ->
     undefined.

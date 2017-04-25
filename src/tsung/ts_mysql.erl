@@ -44,6 +44,7 @@
          parse_bidi/2,
          dump/2,
          parse_config/2,
+			terminate/1,
          decode_buffer/2,
          new_session/0]).
 
@@ -267,3 +268,6 @@ bxor_binary(B1, B2) ->
     list_to_binary(dualmap(fun (E1, E2) ->
                                    E1 bxor E2
                            end, binary_to_list(B1), binary_to_list(B2))).
+
+terminate(_State) ->
+	ok.

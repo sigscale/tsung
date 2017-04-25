@@ -45,6 +45,7 @@
          parse_bidi/2,
          parse_config/2,
          decode_buffer/2,
+			terminate/1,
          new_session/0,
          username/2,
          userid/1]).
@@ -359,3 +360,5 @@ password(Prefix,Id) ->
     username(Prefix,Id).
 
 
+terminate(_State) ->
+	ok.

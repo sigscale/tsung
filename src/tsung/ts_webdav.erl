@@ -40,6 +40,7 @@
          dump/2,
          parse_config/2,
          decode_buffer/2,
+			terminate/1,
          new_session/0]).
 
 session_defaults() -> {ok, true}.
@@ -93,3 +94,6 @@ add_dynparams(Subst, DynData, Param, HostData) ->
 %%% methode MKCOL
 %%% methode LOCK; entete: Timeout (optionel ?), If (Optionel),Depth (Optionel); Body: XML (optionel ?)
 %%% methode UNLOCK; entete: Lock-Token; Body: XML (optionel ?)
+
+terminate(_State) ->
+	ok.

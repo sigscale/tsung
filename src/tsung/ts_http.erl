@@ -40,6 +40,7 @@
          parse_bidi/2,
          parse_config/2,
          decode_buffer/2,
+			terminate/1,
          new_session/0]).
 
 %%----------------------------------------------------------------------
@@ -232,6 +233,8 @@ add_dynparams(#http{session_cookies=DynCookie,user_agent=UA}, Req, _) ->
     Cookie=DynCookie++Req#http_request.cookie,
     Req#http_request{cookie=Cookie,user_agent=UA}.
 
+terminate(_State) ->
+	ok.
 
 
 %%----------------------------------------------------------------------
