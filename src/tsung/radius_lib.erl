@@ -59,7 +59,6 @@ install_db("acct", AcctPid, NasID, Tab) ->
 							case ets:lookup(T, '$_info') of
 								[{Key, AutherUserID, AuthPid, undefined, undefined}] ->
 									ets:insert(T, {Key, AutherUserID, AuthPid, NasID, AcctPid}),
-									true = ets:new(Tab, ?SessionTabOptions),
 									pg2:leave(AuthPid),
 									global:del_lock({?MODULE, Proc}),
 									{ok, T};
