@@ -84,7 +84,7 @@ install_db("acct", AcctPid, NasID, Tab) ->
 register_user(Tab, User) when is_binary(User)->
 	register_user(Tab, binary_to_list(User));
 register_user(Tab, User) when is_list(User) ->
-	ets:insert(Tab, #registered{username = User}),
+	ets:insert(Tab, #radius_user{username = User}),
 	ok.
 
 -spec transfer_ownsership(Tab) ->
