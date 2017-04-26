@@ -13,7 +13,7 @@
 
 %% @doc CB for xml config file
 user({_Pid, DynVars}) ->
-	case ts_dynvar:lookup(tab_id, DynVars) of
+	case ts_dynvars:lookup(tab_id, DynVars) of
 		false ->
 			"_start";
 		{ok, Tab} ->

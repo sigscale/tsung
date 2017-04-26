@@ -254,7 +254,7 @@ add_dynparams1(Subst, #radius_request{type = auth, port = Port}
 	NewServer = {Address, Port, Proto},
 	NParam = add_dynparams2(Subst, Param, DynVars),
 	{NParam, NewServer};
-add_dynparams1(Subst, #radius_request{type = acc, port = Port}
+add_dynparams1(Subst, #radius_request{type = acct, port = Port}
 		= Param, {Address, _, Proto}, DynVars) ->
 	NewServer = {Address, Port, Proto},
 	NParam = add_dynparams2(Subst, Param, DynVars),
