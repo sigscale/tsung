@@ -524,4 +524,7 @@ repeat | if | change_type | foreach | set_option | interaction )*>
 <!ELEMENT accounting EMPTY>
 <!ATTLIST accounting
 	cb_mod CDATA #REQUIRED
+	duration NMTOKEN #IMPLIED
+	interim (true | false) #IMPLIED
+	interval NMTOKEN #IMPLIED
 >
