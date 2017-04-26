@@ -43,7 +43,6 @@
          parse_bidi/2,
          parse_config/2,
          decode_buffer/2,
-			F
 			terminate/1,
          new_session/0]).
 
