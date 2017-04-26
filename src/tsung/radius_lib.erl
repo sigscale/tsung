@@ -3,7 +3,7 @@
 
 -export([install_db/4]).
 -export([user/1]).
--export([register_user/2, transfer_ownsership/2, get_user/2, get_user/3]).
+-export([register_user/2, transfer_ownsership/1, get_user/2, get_user/3]).
 
 -include("ts_radius.hrl").
 
@@ -39,7 +39,7 @@ user1(ID, {username, PrevUser}) ->
 	Result :: atom(),
 	Reason :: term().
 install_db("auth", AuthPid, NasID, Tab) ->
-	case pg2:join(auth, AuthPid) of
+	case pg2:join(auths_available, AuthPid) of
 		{error, {no_such_group, _}} ->
 			pg2:create(auths_available),
 			install_db("auth", AuthPid, NasID, Tab);
@@ -90,8 +90,7 @@ register_user(Tab, User) when is_list(User) ->
 
 -spec transfer_ownsership(Tab) ->
 		ok when
-	Tab :: atom(),
-	NasID :: string() | atom().
+	Tab :: atom().
 transfer_ownsership(Tab) ->
 	case ets:lookup(Tab, '$_info') of
 		[{_, _, _, _, self()}] ->
