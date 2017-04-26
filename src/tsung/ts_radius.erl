@@ -38,16 +38,16 @@ new_session() ->
 %% @doc Build a message/request
 %%	CbMod:get_message/2 returns `{Msg, NewSession :: #radius_session{}}'.
 get_message(#radius_request{type = auth, auth_type = pap} = Data,
-		#state_rcv{session = #radius_session{tab_id = undefined},
+		#state_rcv{session = #radius_session{auth_tab = undefined},
 		dynvars = DynVars, ip = {IP, _} = Session} = State) ->
 	NewState = get_message1("auth", State),
 	get_message3(Data, NewState);
 get_message(#radius_request{type = auth, auth_type = 'eap-pwd'} = Data,
-		#state_rcv{session = #radius_session{tab_id = undefined}} = State) ->
+		#state_rcv{session = #radius_session{auth_tab = undefined}} = State) ->
 	NewState = get_message1("auth", State),
 	get_message(Data, NewState);
 get_message(#radius_request{type = acct, acct_type = start} = Data,
-		#state_rcv{session = #radius_session{tab_id = undefined}} = State) ->
+		#state_rcv{session = #radius_session{acct_tab = undefined}} = State) ->
 	NewState = get_message1("acct", State),
 	get_message(Data, NewState);
 get_message(#radius_request{type = auth, auth_type = 'eap-pwd'} = Data,
@@ -130,7 +130,7 @@ get_message1(Type, #state_rcv{session = Session ,dynvars = DynVars,
 	Tab = list_to_existing_atom(NasID),
 	{ok, NTab} = radius_lib:install_db(Type, self(), NasID, Tab),
 	State#state_rcv{session =
-		Session#radius_session{tab_id = NTab, nas_id = NasID}}.
+		Session#radius_session{auth_tab = NTab, nas_id = NasID}}.
 %% @hidden
 get_message2(Data, RecordData, #state_rcv{session = Session} = State) ->
 	NewSession = Session#radius_session{data = RecordData},
@@ -198,7 +198,7 @@ parse1(#state_rcv{session = #radius_session{result_value = "stop"},
 	parse2(State, Opts, Close).
 %% @hidden
 parse2(#state_rcv{session = #radius_session{result_value = "success",
-		username = UserName, tab_id = Tab} = Session, request =
+		username = UserName, auth_tab = Tab} = Session, request =
 		#ts_request{param = #radius_request{type = auth,
 		auth_type = 'eap-pwd'}}} = State, Opts, Close) ->
 	ok = radius_lib:register_user(Tab, UserName),
@@ -206,7 +206,7 @@ parse2(#state_rcv{session = #radius_session{result_value = "success",
 	NewState = State#state_rcv{session = NewSession},
 	parse3(NewState, Opts, Close);
 parse2(#state_rcv{session = #radius_session{result_value = "success",
-		username = UserName, tab_id = Tab}, request =
+		username = UserName, auth_tab = Tab}, request =
 		#ts_request{param = #radius_request{type = auth}}}
 		= State, Opts, Close) ->
 	ok = radius_lib:register_user(Tab, UserName),
@@ -281,7 +281,7 @@ add_dynparams2(_, Param, _DynVars) ->
 -spec terminate(State) ->
 		ok when
 	State :: #state_rcv{}.
-terminate(#state_rcv{session = #radius_session{tab_id = Tab}}) ->
+terminate(#state_rcv{session = #radius_session{auth_tab = Tab}}) ->
 	radius_lib:transfer_ownsership(Tab).
 
 -spec subst(Param, DynVars) ->
