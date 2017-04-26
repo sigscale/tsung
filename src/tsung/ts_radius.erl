@@ -117,7 +117,7 @@ get_message1(Type, #state_rcv{session = Session ,dynvars = DynVars} = State) ->
 	{ok, AuthTab} = radius_lib:install_db(Type, self(), NasID, Tab),
 	State#state_rcv{session =
 		Session#radius_session{tab_id = AuthTab,
-		nas_id = list_to_existing_atom(AuthTab)}}.
+		nas_id = atom_to_list(AuthTab)}}.
 %% @hidden
 get_message2(Data, RecordData, #state_rcv{session = Session} = State) ->
 	NewSession = Session#radius_session{data = RecordData},
