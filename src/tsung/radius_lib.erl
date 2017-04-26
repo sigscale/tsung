@@ -13,18 +13,13 @@
 
 %% @doc CB for xml config file
 user({_Pid, DynVars}) ->
-	User = lists:keyfind(username, 1, DynVars),
-	{_, ID} = lists:keyfind(tsung_userid, 1, DynVars),
-	user1(ID, User).
-%% @hidden
-user1(ID, false) ->
-	Name = "acc_session" ++ integer_to_list(ID),
-	Tab = list_to_atom(Name),
-	get_user(new, Tab, 100);
-user1(ID, {username, PrevUser}) ->
-	Name = "acc_session" ++ integer_to_list(ID),
-	Tab = list_to_existing_atom(Name),
-	get_user(next, Tab, PrevUser).
+	case ts_dynvar:lookup(tab_id, DynVars) of
+		false ->
+			"_start";
+		{ok, Tab} ->
+			PrevUser = ts_dynvars:lookup(username, DynVars),
+			get_user(Tab, PrevUser)
+	end.
 
 %-----------------------------------------------------------------
 %% CallBack Function for RADIUS pulgin
@@ -106,49 +101,54 @@ transfer_ownsership(Tab) ->
 			ok
 	end.
 
--spec get_user(first, Tab) ->
+-spec get_user(Tab, PrevUser) ->
 		User when
-	Tab :: integer(),
-	User :: binary() | string().
-%% @equiv get_user(fist, Tab,  undefined)
-get_user(first, Tab) ->
-	get_user(first, Tab, undefined).
-
--spec get_user(Type, Tab, Spec) ->
-		User when
-	Type :: new | start | first | next | next_chunk,
 	Tab :: atom(),
-	Spec :: integer() | undefined | '$end_of_table',
+	PrevUser :: string(),
 	User :: binary() | string().
 %% @doc Get authenticated users.
-get_user(new, Tab, ChunkSize) when is_integer(ChunkSize) ->
-	case ets:info(Tab, name) of
-		undefined ->
-			ets:new(Tab, ?SessionTabOptions),
-			get_user(start, Tab, ChunkSize);
-		_ ->
-			get_user(first, Tab, undefined)
+get_user(Tab, first) ->
+	case ets:first(Tab) of
+		'$_info' ->
+			ets:next(Tab, '$_info');
+		User ->
+			User
 	end;
-get_user(start, Tab, ChunkSize) when is_integer(ChunkSize) ->
-	case authenticated_users(Tab, ChunkSize) of
+get_user(Tab, PrevUser) ->
+	case ets:next(Tab, PrevUser) of
 		'$end_of_table' ->
-			'$end_of_table';
-		_ ->
-			ets:first(Tab)
-	end;
-get_user(first, Tab, undefined) ->
-	ets:first(Tab);
-get_user(next, Tab, '$end_of_table')  ->
-	ets:first(Tab);
-get_user(next, Tab, PrevUser)  ->
-	ets:next(Tab, PrevUser);
-get_user(next_chunk, Tab, ChunkSize) ->
-	true = ets:delete_all_objects(Tab),
-	case authenticated_users(Tab, ChunkSize) of
-		'$end_of_table' ->
-			get_user(next_chunk, Tab, ChunkSize);
-		_ ->
-			ets:first(Tab)
+			ets:first(Tab);
+		User ->
+			User
+	end.
+
+-spec lookup_user(Tab, Key, Interval) ->
+		{Type, User} when
+	Tab :: atom(),
+	Key :: string() | '$end_of_table',
+	Interval :: integer(),
+	Type :: interim | start,
+	User :: string().
+%% @doc lookup user record
+lookup_user(Tab, '$end_of_table', Interval) ->
+	do_loop(Tab, Interval);
+lookup_user(Tab, Key, Interval) ->
+	case ets:lookup(Tab, Key) of
+		[#radius_user{username = Key, start_time = undefined,
+				last_update = undefined} = UR] ->
+			ets:insert(Tab, UR#radius_user{start_time = erlang:now(),
+					last_update = erlang:now()}),
+			{start, Key};
+		[#radius_user{username = Key, last_update = LUpdate}] ->
+			Elapsed = ts_utils:elapsed(LUpdate, erlang:now()),
+			case Elapsed < Interval of
+				true ->
+					{interim, Key};
+				false ->
+					lookup_user(Tab, ets:next(Tab, Key), Interval)
+			end;
+		[] ->
+			no_users
 	end.
 
 %------------------------------------------------------------
@@ -179,7 +179,7 @@ authenticated_users(Tab, ChunkSize) ->
 find_table(OP) ->
 	{ok, CHost} = ts_utils:node_to_hostname(node()),
 	StringTabs = [atom_to_list(Tab) || Tab <- ets:all(), is_atom(Tab)],
-	AvailableTables = [Table || CHost ++ _ = Table <- StringTables],
+	AvailableTables = [Table || "rt" ++_ = Table <- StringTabs],
 	AuthTabs = [{Table, ets:info(list_to_existing_atom(Table), owner)} || Table <- AvailableTables],
 	find_table(OP, AuthTabs).
 %% @hidden
@@ -189,3 +189,13 @@ find_table(OP, [_ | T]) ->
 	find_table(OP, T);
 find_table(_OP, []) ->
 	not_found.
+
+do_loop(Tab, Interval) ->
+	receive
+	after
+		30000 ->
+			lookup_user(Tab, ets:first(Tab), Interval)
+	end.
+
+
+
