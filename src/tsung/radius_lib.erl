@@ -3,7 +3,7 @@
 
 -export([install_db/4]).
 -export([user/1]).
--export([register_user/2, transfer_ownsership/1, get_user/2, get_user/3]).
+-export([register_user/2, transfer_ownsership/1, get_user/2]).
 
 -include("ts_radius.hrl").
 
@@ -44,7 +44,7 @@ install_db("auth", AuthPid, NasID, Tab) ->
 			install_db("auth", AuthPid, NasID, Tab);
 		ok ->
 			true = ets:new(Tab, ?SessionTabOptions),
-			ets:insert(Tab, {'$_info', NasID, AuthPid, undefined, undefined}), %% {'$_info', auth_user_id, auth_pid, acct_user_id, acct_pid}
+			ets:insert(Tab, {'next_key', '$_info', NasID, AuthPid, undefined, undefined}), %% {'$_info', auth_user_id, auth_pid, acct_user_id, acct_pid}
 			{ok, Tab}
 	end;
 install_db("acct", AcctPid, NasID, Tab) ->
@@ -57,12 +57,12 @@ install_db("acct", AcctPid, NasID, Tab) ->
 					case find_table(Proc) of
 						{ok, T} ->
 							case ets:lookup(T, '$_info') of
-								[{Key, AutherUserID, AuthPid, undefined, undefined}] ->
+								[{_, Key, AutherUserID, AuthPid, undefined, undefined}] ->
 									ets:insert(T, {Key, AutherUserID, AuthPid, NasID, AcctPid}),
 									pg2:leave(AuthPid),
 									global:del_lock({?MODULE, Proc}),
 									{ok, T};
-								[{_, _, AuthPid, _, _}] ->
+								[{_, _, _, AuthPid, _, _}] ->
 									pg2:leave(AuthPid),
 									install_db("acct", AcctPid, NasID, Tab);
 								[] ->
@@ -91,12 +91,13 @@ register_user(Tab, User) when is_list(User) ->
 		ok when
 	Tab :: atom().
 transfer_ownsership(Tab) ->
+	PID = self(),
 	case ets:lookup(Tab, '$_info') of
-		[{_, _, _, _, self()}] ->
+		[{_, _, _, _, _, PID}] ->
 			ok;
-		[{_, _, _, undefined, undefined}] ->
+		[{_, _, _, _, undefined, undefined}] ->
 			ok;
-		[{_Key, AutherUserID, AuthPid, AcctUserID, AcctPid}] ->
+		[{_, _Key, AutherUserID, AuthPid, AcctUserID, AcctPid}] ->
 			ets:setopts(Tab, {heir, AcctPid,
 				[io:fwrite("Successfully transfer ownership {~p, ~p}
 				to {~p, ~p} ~n", [AutherUserID, AuthPid, AcctUserID, AcctPid])]}),
