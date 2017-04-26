@@ -4,6 +4,8 @@
 -define(SessionTab, accsession).
 -define(SessionTabOptions, [named_table, {keypos, 2}]).
 
+record(radius_user, {username, start_time, last_update}).
+
 -record(registered, {username, password}).
 
 -record(acc_session,
