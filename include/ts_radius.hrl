@@ -31,7 +31,8 @@
 			mac :: string() | binary(),
 			nas_id :: string() | binary(),
 			result_value :: atom(),
-			tab_id :: atom(),
+			auth_tab :: atom(),
+			acct_tab :: atom(),
 			data :: string() | binary()}).
 
 -record(pwd,
