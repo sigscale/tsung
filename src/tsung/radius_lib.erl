@@ -31,13 +31,11 @@ user1(ID, {username, PrevUser}) ->
 %-----------------------------------------------------------------
 
 -spec install_db(Type, Pid, NasID, Tab) ->
-		{ok, AuthTab, AcctTab} | {error, Reason} when
+		{ok, Tab} | {error, Reason} when
 	Type :: string(),
 	Pid :: pid(),
 	NasID :: string(),
 	Tab :: atom(),
-	AuthTab :: atom(),
-	AcctTab :: atom(),
 	Reason :: term().
 install_db("auth", AuthPid, NasID, Tab) ->
 	case pg2:join(auths_available, AuthPid) of
@@ -47,7 +45,7 @@ install_db("auth", AuthPid, NasID, Tab) ->
 		ok ->
 			true = ets:new(Tab, ?SessionTabOptions),
 			ets:insert(Tab, {'$_info', NasID, AuthPid, undefined, undefined}), %% {'$_info', auth_user_id, auth_pid, acct_user_id, acct_pid}
-			{ok, Tab, undefined}
+			{ok, Tab}
 	end;
 install_db("acct", AcctPid, NasID, Tab) ->
 	case pg2:get_closest_pid(auths_available) of
@@ -64,7 +62,7 @@ install_db("acct", AcctPid, NasID, Tab) ->
 									true = ets:new(Tab, ?SessionTabOptions),
 									pg2:leave(AuthPid),
 									global:del_lock({?MODULE, Proc}),
-									{ok, T, Tab};
+									{ok, T};
 								[{_, _, AuthPid, _, _}] ->
 									pg2:leave(AuthPid),
 									install_db("acct", AcctPid, NasID, Tab);
