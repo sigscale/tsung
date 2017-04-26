@@ -22,6 +22,9 @@ record(radius_user, {username, start_time, last_update}).
 			password :: string() | binary(),
 			secret :: string() | binary(),
 			cb_mod :: atom(),
+			duration,
+			interval,
+			interim,
 			auth_type = undefined :: undefined | pap | eap_pwd,
 			acc_type = start :: start | interim | stop,
 			result_var = "challenge" :: string()}).
