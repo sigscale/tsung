@@ -283,8 +283,11 @@ add_dynparams2(_, Param, _DynVars) ->
 -spec terminate(State) ->
 		ok when
 	State :: #state_rcv{}.
-terminate(#state_rcv{session = #radius_session{auth_tab = Tab}}) ->
-	radius_lib:transfer_ownsership(Tab).
+terminate(#state_rcv{request = #radius_request{type = auth},
+		session = #radius_session{auth_tab = Tab}}) ->
+	radius_lib:transfer_ownsership(Tab);
+terminate(_State) ->
+	ok.
 
 -spec subst(Param, DynVars) ->
 		Result when
