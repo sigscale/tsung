@@ -70,7 +70,8 @@ get_message(#radius_request{type = acct, username = "_start"} = Data,
 	get_message(NewData, NewState);
 %% handle accounting duration
 get_message(#radius_request{type = acct, duration = Duration} = Data,
-		#state_rcv{session = #radius_session{data = Acct} = Session} = State) ->
+		#state_rcv{session = #radius_session{data = Acct} = Session} = State) 
+		Acct#accounting.type =/= start ->
 	Elapsed = ts_utils:elapsed(Duration, erlang:now()),
 	case Elapsed > Duration of
 		true ->
