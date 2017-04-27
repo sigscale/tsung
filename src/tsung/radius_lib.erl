@@ -47,7 +47,7 @@ install_db("acct", AcctPid, NasID, Tab) ->
 		{error, {Reason, _}} ->
 			{error, Reason};
 		Proc ->
-			case global:set_lock({?MODULE, Proc}, Tab) of
+			case global:set_lock({?MODULE, Proc}) of
 				true ->
 					case find_table(Proc) of
 						{ok, T} ->
