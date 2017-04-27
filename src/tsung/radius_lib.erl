@@ -43,6 +43,7 @@ install_db("auth", AuthPid, NasID, Tab) ->
 			{ok, Tab}
 	end;
 install_db("acct", AcctPid, NasID, Tab) ->
+	pg2:join(auths_available, AcctPid),
 	case pg2:get_closest_pid(auths_available) of
 		{error, {no_process, _Name}} ->
 			{error, no_such_group};
