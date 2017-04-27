@@ -6,6 +6,7 @@
 -export([lookup_user/3, register_user/2, transfer_ownsership/1, get_user/2]).
 
 -include("ts_radius.hrl").
+-include("ts_config.hrl").
 
 %---------------------------------------------------------------
 %% CallBack Function for tsung config file
@@ -136,11 +137,11 @@ lookup_user(Tab, Key, Interval) ->
 	case ets:lookup(Tab, Key) of
 		[#radius_user{username = Key, start_time = undefined,
 				last_update = undefined} = UR] ->
-			ets:insert(Tab, UR#radius_user{start_time = erlang:now(),
-					last_update = erlang:now()}),
+			ets:insert(Tab, UR#radius_user{start_time = ?NOW,
+					last_update = ?NOW}),
 			{start, Key};
 		[#radius_user{username = Key, last_update = LUpdate}] ->
-			Elapsed = ts_utils:elapsed(LUpdate, erlang:now()),
+			Elapsed = ts_utils:elapsed(LUpdate, ?NOW),
 			case Elapsed < Interval of
 				true ->
 					{interim, Key};
