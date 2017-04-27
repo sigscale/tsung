@@ -3,7 +3,7 @@
 
 -export([install_db/4]).
 -export([user/1]).
--export([register_user/2, transfer_ownsership/1, get_user/2]).
+-export([lookup_user/3, register_user/2, transfer_ownsership/1, get_user/2]).
 
 -include("ts_radius.hrl").
 
