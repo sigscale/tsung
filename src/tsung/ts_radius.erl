@@ -61,13 +61,10 @@ get_message(#radius_request{type = acct} = Data, #state_rcv{session =
 	get_message(Data, NewState);
 get_message(#radius_request{type = acct, username = "_start"} = Data,
 		#state_rcv{session = #radius_session{tab_id = Tab,
-		data = #accounting{type = start}}, dynvars = DynVars}
-		= State) ->
-	NewDynVars = ts_dynvars:set(tab_id, Tab, DynVars),
+		data = #accounting{type = start}}} = State) ->
 	User = radius_lib:get_user(Tab, first),
-	NewState = State#state_rcv{dynvars = NewDynVars},
 	NewData = Data#radius_request{username = User},
-	get_message(NewData, NewState);
+	get_message(NewData, State);
 %% handle accounting duration
 get_message(#radius_request{type = acct, duration = Duration} = Data,
 		#state_rcv{session = #radius_session{data = Acct} = Session} = State)
