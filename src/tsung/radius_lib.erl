@@ -18,7 +18,7 @@ user({_Pid, DynVars}) ->
 		false ->
 			"_start";
 		{ok, Tab} ->
-			PrevUser = ts_dynvars:lookup(username, DynVars),
+			{ok, PrevUser} = ts_dynvars:lookup(username, DynVars),
 			get_user(Tab, PrevUser)
 	end.
 
