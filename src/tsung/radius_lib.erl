@@ -38,7 +38,7 @@ install_db("auth", AuthPid, NasID, Tab) ->
 			pg2:create(auths_available),
 			install_db("auth", AuthPid, NasID, Tab);
 		ok ->
-			true = ets:new(Tab, ?SessionTabOptions),
+			ets:new(Tab, ?SessionTabOptions),
 			ets:insert(Tab, {'next_key', '$_info', NasID, AuthPid, undefined, undefined}), %% {'$_info', auth_user_id, auth_pid, acct_user_id, acct_pid}
 			{ok, Tab}
 	end;
