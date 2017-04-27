@@ -70,10 +70,10 @@ get_message(#radius_request{type = acct, username = "_start"} = Data,
 	get_message(NewData, NewState);
 %% handle accounting duration
 get_message(#radius_request{type = acct, duration = Duration} = Data,
-		#state_rcv{session = #radius_session{data = Acct} = Session} = State) 
-		Acct#accounting.type =/= start ->
-	Elapsed = ts_utils:elapsed(Duration, erlang:now()),
-	case Elapsed > Duration of
+		#state_rcv{session = #radius_session{data = Acct} = Session} = State)
+		when Acct#accounting.type =/= start ->
+	Elapsed = ts_utils:elapsed(Duration, ?NOW),
+	case Elapsed < Duration of
 		true ->
 			NewSession = Session#radius_session{data =
 				Acct#accounting{type = stop}},
@@ -83,7 +83,8 @@ get_message(#radius_request{type = acct, duration = Duration} = Data,
 			get_message(Data, State)
 	end;
 get_message(#radius_request{interim = false, username = PeerID} = Data,
-		#state_rcv{session = #radius_session{data = Acct} = Session } = State) ->
+		#state_rcv{session = #radius_session{data = Acct} = Session } = State)
+		when Acct#accounting.type =/= start ->
 	NewSession = Session#radius_session{username = PeerID,
 		data = Acct#accounting{type = stop}},
 	NewState = State#state_rcv{session = NewSession},
