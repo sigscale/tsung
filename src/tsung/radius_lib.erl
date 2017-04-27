@@ -53,8 +53,8 @@ install_db("acct", AcctPid, NasID, Tab) ->
 						{ok, T} ->
 							case ets:lookup(T, '$_info') of
 								[{_, Key, AutherUserID, AuthPid, undefined, undefined}] ->
-									ets:insert(T, {Key, AutherUserID, AuthPid, NasID, AcctPid}),
 									pg2:leave(AuthPid),
+									ets:insert(T, {'next_key', Key, AutherUserID, AuthPid, NasID, AcctPid}),
 									global:del_lock({?MODULE, Proc}),
 									{ok, T};
 								[{_, _, _, AuthPid, _, _}] ->
@@ -184,7 +184,7 @@ find_table(OP) ->
 	find_table(OP, AuthTabs).
 %% @hidden
 find_table(OP, [{Tab, OP} | _]) ->
-	{ok, Tab};
+	{ok, list_to_existing_atom(Tab)};
 find_table(OP, [_ | T]) ->
 	find_table(OP, T);
 find_table(_OP, []) ->
@@ -205,7 +205,7 @@ get_closest_pid(Group, AcctPid) ->
 %% @hidden
 get_closest_pid1([AcctPid | T], Group, AcctPid) ->
 	get_closest_pid1(T, Group, AcctPid);
-get_closest_pid1([H | _], Group, AcctPid) ->
+get_closest_pid1([H | _], _Group, _AcctPid) ->
 	H;
 get_closest_pid1([], Group, AcctPid) ->
 	{error, {group, Group}};
