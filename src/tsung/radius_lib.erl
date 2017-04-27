@@ -43,10 +43,9 @@ install_db("auth", AuthPid, NasID, Tab) ->
 			{ok, Tab}
 	end;
 install_db("acct", AcctPid, NasID, Tab) ->
-	pg2:join(auths_available, AcctPid),
-	case pg2:get_closest_pid(auths_available) of
-		{error, {no_process, _Name}} ->
-			{error, no_such_group};
+	case get_closest_pid(auths_available, AcctPid) of
+		{error, {Reason, _}} ->
+			{error, Reason};
 		Proc ->
 			case global:set_lock({?MODULE, Proc}, Tab) of
 				true ->
@@ -198,5 +197,17 @@ do_loop(Tab, Interval) ->
 			lookup_user(Tab, ets:first(Tab), Interval)
 	end.
 
-
-
+get_closest_pid(Group, AcctPid) ->
+	pg2:join(auths_available, AcctPid),
+	AvailableMems = pg2:get_members(auths_available),
+	pg2:leave(auths_available, AcctPid),
+	get_closest_pid1(AvailableMems, Group, AcctPid).
+%% @hidden
+get_closest_pid1([AcctPid | T], Group, AcctPid) ->
+	get_closest_pid1(T, Group, AcctPid);
+get_closest_pid1([H | _], Group, AcctPid) ->
+	H;
+get_closest_pid1([], Group, AcctPid) ->
+	{error, {group, Group}};
+get_closest_pid1({error, _} = Reason, _Gropu, _AcctPid) ->
+	Reason.
