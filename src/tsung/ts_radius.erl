@@ -121,8 +121,7 @@ get_message1(Type, #state_rcv{session = Session ,dynvars = DynVars} = State) ->
 %% @hidden
 get_message2(Data, RecordData, #state_rcv{session = Session} = State) ->
 	NewSession = Session#radius_session{data = RecordData},
-	NewState = State#state_rcv{session = NewSession},
-	get_message(Data, NewState).
+	State#state_rcv{session = NewSession}.
 %% @hidden
 get_message3(Data, State) ->
 	CbMod = Data#radius_request.cb_mod,
