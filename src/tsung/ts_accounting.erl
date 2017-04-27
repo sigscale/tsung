@@ -16,7 +16,7 @@
 	NewData :: binary(),
 	Session :: #radius_session{}.
 %% @doc Build accounting request
-get_message(#radius_request{type = acc, username = PeerID, secret = Secret},
+get_message(#radius_request{type = acct, username = PeerID, secret = Secret},
 		#state_rcv{session = #radius_session{radius_id = RadID, nas_id = NasID,
 		data = #accounting{type = start} = Acc} = Session}= State) ->
 	MAC = integer_to_list(rand:uniform(19999999999)), %% FIXME
@@ -29,7 +29,7 @@ get_message(#radius_request{type = acc, username = PeerID, secret = Secret},
 			Session#radius_session{data = Acc#accounting{req_auth = ReqAuth,
 			acc_session_id = AcctSessionID}, mac = MAC},
 	{RequestPacket, NewSession};
-get_message(#radius_request{type = acc, secret = Secret},
+get_message(#radius_request{type = acct, secret = Secret},
 		#state_rcv{session = #radius_session{username = PeerID, 
 		radius_id = RadID, nas_id = NasID, mac = MAC, data =
 		#accounting{type = interim, acc_session_id = AccSID} = Acc}
@@ -40,7 +40,7 @@ get_message(#radius_request{type = acc, secret = Secret},
 	NewSession =
 		Session#radius_session{data = Acc#accounting{req_auth = ReqAuth}},
 	{RequestPacket, NewSession};
-get_message(#radius_request{type = acc, secret = Secret},
+get_message(#radius_request{type = acct, secret = Secret},
 		#state_rcv{session = #radius_session{username = PeerID, 
 		radius_id = RadID, nas_id = NasID, mac = MAC, data =
 		#accounting{type = stop, acc_session_id = AccSID}}

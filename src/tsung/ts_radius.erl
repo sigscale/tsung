@@ -169,17 +169,17 @@ parse1(#state_rcv{session = #radius_session{result_value = "failure"},
 	ts_mon:add({count, 'AccessReject-EAP-PWD'}),
 	parse2(State, Opts, Close);
 parse1(#state_rcv{session = #radius_session{result_value = "start"},
-		request = #ts_request{param = #radius_request{type = acc}}} = State,
+		request = #ts_request{param = #radius_request{type = acct}}} = State,
 		Opts, Close) ->
 	ts_mon:add({count, 'AccountingStart'}),
 	parse2(State, Opts, Close);
 parse1(#state_rcv{session = #radius_session{result_value = "interim"},
-		request = #ts_request{param = #radius_request{type = acc}}} = State,
+		request = #ts_request{param = #radius_request{type = acct}}} = State,
 		Opts, Close) ->
 	ts_mon:add({count, 'AccountingInterimUpdate'}),
 	parse2(State, Opts, Close);
 parse1(#state_rcv{session = #radius_session{result_value = "stop"},
-		request = #ts_request{param = #radius_request{type = acc}}} = State,
+		request = #ts_request{param = #radius_request{type = acct}}} = State,
 		Opts, Close) ->
 	ts_mon:add({count, 'AccountingStop'}),
 	parse2(State, Opts, Close).
