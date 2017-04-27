@@ -53,12 +53,12 @@ install_db("acct", AcctPid, NasID, Tab) ->
 						{ok, T} ->
 							case ets:lookup(T, '$_info') of
 								[{_, Key, AutherUserID, AuthPid, undefined, undefined}] ->
-									pg2:leave(AuthPid),
 									ets:insert(T, {'next_key', Key, AutherUserID, AuthPid, NasID, AcctPid}),
+									pg2:leave(auths_available, AuthPid),
 									global:del_lock({?MODULE, Proc}),
 									{ok, T};
 								[{_, _, _, AuthPid, _, _}] ->
-									pg2:leave(AuthPid),
+									pg2:leave(auths_available, AuthPid),
 									install_db("acct", AcctPid, NasID, Tab);
 								[] ->
 									{error, not_found}
