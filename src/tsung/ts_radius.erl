@@ -198,7 +198,14 @@ parse2(#state_rcv{session = #radius_session{result_value = "success",
 		= State, Opts, Close) ->
 	ok = radius_lib:register_user(Tab, UserName),
 	parse3(State, Opts, Close);
+parse2(#state_rcv{request = #ts_request{param = #radius_request{type = acct}},
+		session = #radius_session{tab_id = Tab, username = PeerID}, dynvars = DynVars}
+		= State, Opts, Close) ->
+	NewDynVars = ts_dynvars:merge([{tab_id, Tab}, {username, PeerID}], DynVars),
+	NewState = State#state_rcv{dynvars = NewDynVars},
+	parse3(NewState, Opts, Close);
 parse2(State, Opts, Close) ->
+
 	parse3(State, Opts, Close).
 %% @hidden
 parse3(#state_rcv{ack_done = true, dynvars = DynVars, request =
