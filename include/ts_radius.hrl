@@ -2,7 +2,7 @@
 -define(Timeout, 4000).
 -define(ChunkSize, 10).
 -define(SessionTab, accsession).
--define(SessionTabOptions, [named_table, {keypos, 2}]).
+-define(SessionTabOptions, [named_table, public, {keypos, 2}]).
 
 record(radius_user, {username, start_time, last_update}).
 
