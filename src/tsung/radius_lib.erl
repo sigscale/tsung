@@ -184,7 +184,7 @@ find_table(OP) ->
 	find_table(OP, AuthTabs).
 %% @hidden
 find_table(OP, [{Tab, OP} | _]) ->
-	Tab;
+	{ok, Tab};
 find_table(OP, [_ | T]) ->
 	find_table(OP, T);
 find_table(_OP, []) ->
