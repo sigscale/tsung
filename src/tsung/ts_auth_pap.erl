@@ -14,11 +14,9 @@
 %% @doc Build simple authentication request
 get_message(#radius_request{username = PeerID,
 		password = Password, secret = Secret}, #state_rcv{session
-		= #radius_session{radius_id = RadID} = Session} = State) ->
+		= #radius_session{radius_id = RadID, nas_id = NasID} = Session}) ->
 	MAC = integer_to_list(rand:uniform(19999999999)),
 	Authenticator = radius:authenticator(),
-	{_, UserID} = lists:keyfind(tsung_userid, 1, State#state_rcv.dynvars),
-	NasID = "mx-west-" ++ integer_to_list(UserID), 
 	UserPassword = radius_attributes:hide(Secret, Authenticator, Password),	
 	A0 = radius_attributes:new(),
 	A1 = radius_attributes:store(?ServiceType, 2, A0),
@@ -34,7 +32,7 @@ get_message(#radius_request{username = PeerID,
 			attributes = A9},
 	AccessReqestPacket= radius:codec(AccessReqest),
 	NewSession = Session#radius_session{username = PeerID, mac = MAC, 
-		nas_id = NasID, radius_id = RadID},
+		radius_id = RadID},
 	{AccessReqestPacket, NewSession}.
 
 -spec parse(Data, State) ->

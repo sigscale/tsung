@@ -17,19 +17,16 @@
 	Session :: #radius_session{}.
 %% @doc Build pwd authentication request
 get_message(#radius_request{username= PeerID, secret = Secret},
-		#state_rcv{session = #radius_session{username = undefined,
+		#state_rcv{session = #radius_session{username = undefined, nas_id = NasID,
 		data = #pwd{state = none, eap_id = EapID} = Eap, radius_id = RadID}
-		= Session} = State) ->
+		= Session}) ->
 	MAC = integer_to_list(rand:uniform(19999999999)),
-	{_, UserID} = lists:keyfind(tsung_userid, 1, State#state_rcv.dynvars),
-	NasID = "mx-north-" ++ integer_to_list(UserID), 
 	ReqAuth = radius:authenticator(),
 	NewEapID = (EapID rem 255) + 1,
 	RequestPacket =
 		send_identity(NasID, Secret, PeerID, MAC, ReqAuth, RadID, NewEapID),
 	NewSession = Session#radius_session{username = PeerID,
-		data = Eap#pwd{state = id, req_auth = ReqAuth}, mac = MAC,
-		nas_id = NasID},
+		data = Eap#pwd{state = id, req_auth = ReqAuth}, mac = MAC},
 	{RequestPacket, NewSession};
 get_message(#radius_request{secret = Secret, username = PeerID},
 		#state_rcv{session = #radius_session{username = PeerID,

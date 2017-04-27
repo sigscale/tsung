@@ -17,18 +17,17 @@
 	Session :: #radius_session{}.
 %% @doc Build accounting request
 get_message(#radius_request{type = acc, username = PeerID, secret = Secret},
-		#state_rcv{session = #radius_session{radius_id = RadID,
+		#state_rcv{session = #radius_session{radius_id = RadID, nas_id = NasID,
 		data = #accounting{type = start} = Acc} = Session}= State) ->
 	MAC = integer_to_list(rand:uniform(19999999999)), %% FIXME
 	{_, UserID} = lists:keyfind(tsung_userid, 1, State#state_rcv.dynvars),
-	NasID = "mx-west-" ++ integer_to_list(UserID), 
 	AcctSessionID = "0A0055C" ++ integer_to_list(UserID), %% FIXME
 	ReqAuth = radius:authenticator(),
 	RequestPacket = accounting_start(AcctSessionID,
 			NasID, Secret, PeerID, MAC, ReqAuth, RadID),
 	NewSession =
 			Session#radius_session{data = Acc#accounting{req_auth = ReqAuth,
-			acc_session_id = AcctSessionID}, mac = MAC, nas_id = NasID},
+			acc_session_id = AcctSessionID}, mac = MAC},
 	{RequestPacket, NewSession};
 get_message(#radius_request{type = acc, secret = Secret},
 		#state_rcv{session = #radius_session{username = PeerID, 
