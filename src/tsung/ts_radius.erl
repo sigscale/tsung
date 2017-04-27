@@ -95,7 +95,9 @@ get_message(#radius_request{type = acct, username = PeerID,
 		=Session} = State) ->
 	case radius_lib:lookup_user(Tab, PeerID, Interval) of
 		{start, PeerID} ->
-			get_message3(Data, State);
+			NewSession = Session#radius_session{username = PeerID},
+			NewState = State#state_rcv{session = NewSession},
+			get_message3(Data, NewState);
 		{interim, User} ->
 			NewSession = Session#radius_session{data =
 						Acct#accounting{type = interim}, username = User},
