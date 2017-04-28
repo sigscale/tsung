@@ -434,7 +434,8 @@ handle_info2({ssl_closed, Socket}, StateName, State) ->
                     _ -> ok
                 end, Acc end, unused, DictList),
     {next_state, StateName, State};
-
+handle_info2({'ETS-TRANSFER', _, _, _},  StateName, State) ->
+    {next_state, StateName, State};
 handle_info2(Msg, StateName, State ) ->
     ?LOGF("Error: Unknown msg ~p receive in state ~p, stop~n", [Msg,StateName], ?ERR),
     ts_mon:add({ count, error_unknown_msg }),
