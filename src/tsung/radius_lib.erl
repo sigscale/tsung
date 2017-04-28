@@ -89,8 +89,6 @@ register_user(Tab, User) when is_list(User) ->
 transfer_ownsership(Tab) ->
 	PID = self(),
 	case ets:lookup(Tab, "$_info") of
-		[{next_key, "$_info", _, _, _, _}] ->
-			lookup_user(Tab, ets:next(Tab, Key), Interval);
 		[{_, _, _, _, _, PID}] ->
 			ok;
 		[{_, _, _, _, undefined, undefined}] ->
@@ -137,6 +135,8 @@ lookup_user(Tab, '$end_of_table', Interval) ->
 	do_loop(Tab, Interval);
 lookup_user(Tab, Key, Interval) ->
 	case ets:lookup(Tab, Key) of
+		[{next_key, "$_info", _, _, _, _}] ->
+			lookup_user(Tab, ets:next(Tab, Key), Interval);
 		[#radius_user{username = Key, start_time = undefined,
 				last_update = undefined} = UR] ->
 			ets:insert(Tab, UR#radius_user{start_time = ?NOW,
@@ -151,7 +151,7 @@ lookup_user(Tab, Key, Interval) ->
 					lookup_user(Tab, ets:next(Tab, Key), Interval)
 			end;
 		[] ->
-			no_users
+			lookup_user(Tab, ets:next(Tab, Key), Interval)
 	end.
 
 %------------------------------------------------------------
