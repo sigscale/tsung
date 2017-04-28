@@ -77,8 +77,8 @@ get_message(#radius_request{type = acct, username = PeerID,
 		#radius_session{tab_id = Tab, data = #accounting{type = start} = Acct}
 		=Session} = State) ->
 	case radius_lib:lookup_user(Tab, PeerID, Interval) of
-		{start, PeerID} ->
-			NewSession = Session#radius_session{username = PeerID},
+		{start, User} ->
+			NewSession = Session#radius_session{username = User},
 			NewState = State#state_rcv{session = NewSession},
 			get_message3(Data, NewState);
 		{interim, User} ->
@@ -290,7 +290,7 @@ add_dynparams2(_, Param, _DynVars) ->
 -spec terminate(State) ->
 		ok when
 	State :: #state_rcv{}.
-terminate(#state_rcv{request = #radius_request{type = auth},
+terminate(#state_rcv{request = #ts_request{param = #radius_request{type = auth}},
 		session = #radius_session{tab_id = Tab}}) ->
 	radius_lib:transfer_ownsership(Tab);
 terminate(_State) ->
