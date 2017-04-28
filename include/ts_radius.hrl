@@ -62,4 +62,5 @@
 			req_auth :: binary(),
 			resp_auth :: binary(),
 			start_time,
+			finish :: boolean(),
 			acc_session_id :: string() | binary()}).
