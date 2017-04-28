@@ -89,6 +89,8 @@ register_user(Tab, User) when is_list(User) ->
 transfer_ownsership(Tab) ->
 	PID = self(),
 	case ets:lookup(Tab, "$_info") of
+		[{next_key, "$_info", _, _, _, _}] ->
+			lookup_user(Tab, ets:next(Tab, Key), Interval);
 		[{_, _, _, _, _, PID}] ->
 			ok;
 		[{_, _, _, _, undefined, undefined}] ->
