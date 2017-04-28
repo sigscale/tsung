@@ -40,7 +40,7 @@ install_db("auth", AuthPid, NasID, Tab) ->
 			install_db("auth", AuthPid, NasID, Tab);
 		ok ->
 			ets:new(Tab, ?SessionTabOptions),
-			ets:insert(Tab, {'next_key', '$_info', NasID, AuthPid, undefined, undefined}), %% {'$_info', auth_user_id, auth_pid, acct_user_id, acct_pid}
+			ets:insert(Tab, {'next_key', "$_info", NasID, AuthPid, undefined, undefined}), %% {'$_info', auth_user_id, auth_pid, acct_user_id, acct_pid}
 			{ok, Tab}
 	end;
 install_db("acct", AcctPid, NasID, Tab) ->
@@ -52,7 +52,7 @@ install_db("acct", AcctPid, NasID, Tab) ->
 				true ->
 					case find_table(Proc) of
 						{ok, T} ->
-							case ets:lookup(T, '$_info') of
+							case ets:lookup(T, "$_info") of
 								[{_, Key, AutherUserID, AuthPid, undefined, undefined}] ->
 									ets:insert(T, {'next_key', Key, AutherUserID, AuthPid, NasID, AcctPid}),
 									pg2:leave(auths_available, AuthPid),
@@ -88,7 +88,7 @@ register_user(Tab, User) when is_list(User) ->
 	Tab :: atom().
 transfer_ownsership(Tab) ->
 	PID = self(),
-	case ets:lookup(Tab, '$_info') of
+	case ets:lookup(Tab, "$_info") of
 		[{_, _, _, _, _, PID}] ->
 			ok;
 		[{_, _, _, _, undefined, undefined}] ->
@@ -110,8 +110,8 @@ transfer_ownsership(Tab) ->
 %% @doc Get authenticated users.
 get_user(Tab, first) ->
 	case ets:first(Tab) of
-		'$_info' ->
-			ets:next(Tab, '$_info');
+		"$_info" ->
+			ets:next(Tab, "$_info");
 		User ->
 			User
 	end;
