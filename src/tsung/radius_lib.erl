@@ -139,12 +139,12 @@ lookup_user(Tab, Key, Interval) ->
 			lookup_user(Tab, ets:next(Tab, Key), Interval);
 		[#radius_user{username = Key, start_time = undefined,
 				last_update = undefined} = UR] ->
-			ets:insert(Tab, UR#radius_user{start_time = ?NOW,
-					last_update = ?NOW}),
+			ets:insert(Tab, UR#radius_user{start_time = erlang:now(),
+					last_update = erlang:now()}),
 			{start, Key};
 		[#radius_user{username = Key, last_update = LUpdate}] ->
-			Elapsed = ts_utils:elapsed(LUpdate, ?NOW),
-			case Elapsed < Interval of
+			Elapsed = ts_utils:elapsed(LUpdate, erlang:now()),
+			case Elapsed > Interval of
 				true ->
 					{interim, Key};
 				false ->

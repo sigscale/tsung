@@ -34,10 +34,10 @@ parse_config(Element = #xmlElement{name = radius, attributes = Attrs},
 			Port = ts_config:getAttr(integer, Attrs, port, 1813),
 			Interim = getAttr(atom, Element#xmlElement.content, accounting, interim, false),
 			Duration = getAttr(integer, Element#xmlElement.content, accounting, duration, 3600),
-			Interval = getAttr(integer, Element#xmlElement.content, accounting, interval, 180),
+			Interval = getAttr(integer, Element#xmlElement.content, accounting, interval, 5),
 			CbMod = getAttr(atom, Element#xmlElement.content, accounting, cb_mod),
 			DefParams#radius_request{cb_mod = CbMod, port = Port, 
-					interim = Interim, duration = ?NOW + Duration, interval = ?NOW + Interval,
+					interim = Interim, duration = Duration * 1000, interval = Interval * 1000,
 					result_var = {var, ResultVar}};
 		{auth, pap}  ->
 			Port = ts_config:getAttr(integer, Attrs, port, 1812),
