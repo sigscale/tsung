@@ -87,16 +87,21 @@ get_message(#radius_request{type = acct, username = PeerID,
 		NewState = State#state_rcv{session = NewSession},
 			get_message(Data, NewState)
 	end;
-get_message(Data, #state_rcv{session = #radius_session{data =
-		#accounting{type = stop}}} = State) ->
-	get_message3(Data, State);
-get_message(#radius_request{interim = true, interval = Interval} = Data,
-		#state_rcv{session = #radius_session{tab_id = Tab, username = PeerID, data =
+get_message(#radius_request{username = PeerID} = Data, #state_rcv{session = #radius_session{
+		tab_id = Tab, data = #accounting{type = stop}} = Session} = State) ->
+	case radius_lib:stop(Tab, PeerID) of
+		finish ->
+		'something to do men';
+		User ->
+			get_message3(Data, State#state_rcv{session = Session#radius_session{username = User}})
+	end;
+get_message(#radius_request{interim = true, interval = Interval, username = PeerID} = Data,
+		#state_rcv{session = #radius_session{tab_id = Tab, data =
 		#accounting{type = interim} = Acct} = Session} = State) ->
 	case radius_lib:lookup_user(Tab, PeerID, Interval) of
 		{interim, User} ->
 			NewState = State#state_rcv{session = Session#radius_session{username = User}},
-			get_message3(Data, State);
+			get_message3(Data, NewState);
 		{start, User} ->
 			NewAcct = Acct#accounting{type = start},
 			NewState = State#state_rcv{session = Session#radius_session{data = NewAcct, username = User}},

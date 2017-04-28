@@ -3,7 +3,7 @@
 
 -export([install_db/4]).
 -export([user/1]).
--export([lookup_user/3, register_user/2, transfer_ownsership/1, get_user/2]).
+-export([stop/2, lookup_user/3, register_user/2, transfer_ownsership/1, get_user/2]).
 
 -include("ts_radius.hrl").
 -include("ts_config.hrl").
@@ -155,6 +155,21 @@ lookup_user(Tab, Key, Interval) ->
 			lookup_user(Tab, ets:next(Tab, Key), Interval)
 	end.
 
+stop(Tab, Key) ->
+	case ets:lookup(Tab, Key) of
+		[{next_key, "$_info", _, _, _, _}] ->
+			stop(Tab, ets:next(Tab, Key));
+		[#radius_user{username = undefined}] ->
+			stop(Tab, ets:next(Tab, Key));
+		[#radius_user{username = Key, start_time = STime}] when STime =/= undefined ->
+			ets:insert(Tab, #radius_user{username = undefined}),
+			Key;
+		[#radius_user{}] ->
+			ets:insert(Tab, #radius_user{username = undefined}),
+			stop(Tab, ets:next(Tab, Key));
+		[] ->
+			finish
+	end.
 %------------------------------------------------------------
 %% Internal Functions
 %------------------------------------------------------------
