@@ -88,10 +88,11 @@ get_message(#radius_request{type = acct, username = PeerID,
 			get_message(Data, NewState)
 	end;
 get_message(#radius_request{username = PeerID} = Data, #state_rcv{session = #radius_session{
-		tab_id = Tab, data = #accounting{type = stop}} = Session} = State) ->
+		tab_id = Tab, data = #accounting{type = stop} = Acct} = Session} = State) ->
 	case radius_lib:stop(Tab, PeerID) of
 		finish ->
-		'something to do men';
+			get_message3(Data, State#state_rcv{session = Session#radius_session{data =
+				Acct#accounting{finish = true}}});
 		User ->
 			get_message3(Data, State#state_rcv{session = Session#radius_session{username = User}})
 	end;
@@ -211,6 +212,9 @@ parse2(#state_rcv{request = #ts_request{param = #radius_request{type = auth,
 			NewState = State#state_rcv{session = NewSession},
 			parse3(NewState, Opts, Close)
 	end;
+parse2(#state_rcv{request = #ts_request{param = #radius_request{type = acct}}, session = #radius_session{data =
+		#accounting{finish = true}}} = State, Opts, _Close) ->
+	parse3(State#state_rcv{ack_done = false}, Opts, true);
 parse2(State, Opts, Close) ->
 	parse3(State, Opts, Close).
 %% @hidden
