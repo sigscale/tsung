@@ -65,20 +65,6 @@ get_message(#radius_request{type = acct, username = "_start"} = Data,
 	User = radius_lib:get_user(Tab, first),
 	NewData = Data#radius_request{username = User},
 	get_message(NewData, State);
-%% handle accounting duration
-get_message(#radius_request{type = acct, duration = Duration} = Data,
-		#state_rcv{session = #radius_session{data = Acct} = Session} = State)
-		when Acct#accounting.type =/= start ->
-	Elapsed = ts_utils:elapsed(Acct#accounting.start_time, erlang:now()),
-	case Elapsed < Duration of
-		true ->
-			NewSession = Session#radius_session{data =
-				Acct#accounting{type = stop}},
-			NewState = State#state_rcv{session = NewSession},
-			get_message(Data, NewState);
-		false ->
-			get_message(Data, State)
-	end;
 get_message(#radius_request{interim = false, username = PeerID} = Data,
 		#state_rcv{session = #radius_session{data = Acct} = Session } = State)
 		when Acct#accounting.type =/= start ->
@@ -124,7 +110,23 @@ get_message2(Data, RecordData, #state_rcv{session = Session} = State) ->
 	NewSession = Session#radius_session{data = RecordData},
 	State#state_rcv{session = NewSession}.
 %% @hidden
+get_message3(#radius_request{type = acct, duration = Duration} = Data,
+		#state_rcv{session = #radius_session{data = Acct} = Session} = State)
+		when Acct#accounting.type =/= stop ->
+	Elapsed = ts_utils:elapsed(Acct#accounting.start_time, erlang:now()),
+	case Elapsed > Duration of
+		true ->
+			NewSession = Session#radius_session{data =
+				Acct#accounting{type = stop}},
+			NewState = State#state_rcv{session = NewSession},
+			get_message4(Data, NewState);
+		false ->
+			get_message4(Data, State)
+	end;
 get_message3(Data, State) ->
+	get_message4(Data, State).
+%% @hidden
+get_message4(Data, State) ->
 	CbMod = Data#radius_request.cb_mod,
 	CbMod:get_message(Data, State).
 
