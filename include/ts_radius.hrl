@@ -61,4 +61,5 @@
 			{type = start :: start | interim | stop,
 			req_auth :: binary(),
 			resp_auth :: binary(),
+			start_time,
 			acc_session_id :: string() | binary()}).

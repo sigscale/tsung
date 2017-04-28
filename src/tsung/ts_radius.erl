@@ -56,7 +56,7 @@ get_message(#radius_request{type = auth, auth_type = 'eap-pwd'} = Data,
 	get_message(Data, NewState);
 get_message(#radius_request{type = acct} = Data, #state_rcv{session =
 		#radius_session{data = undefined}} = State) ->
-	AccRecord = #accounting{},
+	AccRecord = #accounting{start_time = erlang:now()},
 	NewState = get_message2(Data, AccRecord, State),
 	get_message(Data, NewState);
 get_message(#radius_request{type = acct, username = "_start"} = Data,
@@ -69,7 +69,7 @@ get_message(#radius_request{type = acct, username = "_start"} = Data,
 get_message(#radius_request{type = acct, duration = Duration} = Data,
 		#state_rcv{session = #radius_session{data = Acct} = Session} = State)
 		when Acct#accounting.type =/= start ->
-	Elapsed = ts_utils:elapsed(Duration, ?NOW),
+	Elapsed = ts_utils:elapsed(Acct#accounting.start_time, erlang:now()),
 	case Elapsed < Duration of
 		true ->
 			NewSession = Session#radius_session{data =
