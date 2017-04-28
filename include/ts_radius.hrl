@@ -25,6 +25,7 @@
 			duration,
 			interval,
 			interim,
+			max_reg :: integer(),
 			auth_type = undefined :: undefined | pap | eap_pwd,
 			acct_type = start :: start | interim | stop,
 			result_var = "challenge" :: string()}).
@@ -37,6 +38,7 @@
 			nas_id :: string() | binary(),
 			result_value :: atom(),
 			tab_id :: atom(),
+			tot_reg = 0 :: integer(),
 			data :: string() | binary()}).
 
 -record(pwd,

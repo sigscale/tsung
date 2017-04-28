@@ -25,8 +25,9 @@ parse_config(Element = #xmlElement{name = radius, attributes = Attrs},
 	Secret = ts_config:getAttr(string, Attrs, secret, undefined),
 	RadType = ts_config:getAttr(atom, Attrs, type, undefined),
 	ElementType = element_type(Element#xmlElement.content),
+	MaxReg = ts_config:getAttr(integer, Attrs, max_reg, 1000),
 	DefParams = #radius_request{type = RadType,
-				username = UserName, secret = Secret},
+				username = UserName, secret = Secret, max_reg = MaxReg},
 	SessionData = case {RadType, ElementType} of
 		{acct, _} ->
 			ResultVar = ts_config:getAttr(atom, Attrs, result_var, none),

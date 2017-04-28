@@ -184,38 +184,51 @@ parse1(#state_rcv{session = #radius_session{result_value = "stop"},
 	ts_mon:add({count, 'AccountingStop'}),
 	parse2(State, Opts, Close).
 %% @hidden
-parse2(#state_rcv{session = #radius_session{result_value = "success",
+parse2(#state_rcv{request = #ts_request{param = #radius_request{type = auth,
+		max_reg = MaxReg}}, session = #radius_session{result_value = "success",
+		tot_reg = TotReg} = Session} = State, Opts, Close) ->
+	case TotReg > MaxReg of
+		true ->
+			parse3(State#state_rcv{ack_done = false}, Opts, true);
+		false ->
+			NewSession = Session#radius_session{tot_reg = TotReg + 1},
+			NewState = State#state_rcv{session = NewSession},
+			parse3(NewState, Opts, Close)
+	end;
+parse2(State, Opts, Close) ->
+	parse3(State, Opts, Close).
+%% @hidden
+parse3(#state_rcv{session = #radius_session{result_value = "success",
 		username = UserName, tab_id = Tab} = Session, request =
 		#ts_request{param = #radius_request{type = auth,
 		auth_type = 'eap-pwd'}}} = State, Opts, Close) ->
 	ok = radius_lib:register_user(Tab, UserName),
 	NewSession = Session#radius_session{username = undefined},
 	NewState = State#state_rcv{session = NewSession},
-	parse3(NewState, Opts, Close);
-parse2(#state_rcv{session = #radius_session{result_value = "success",
+	parse4(NewState, Opts, Close);
+parse3(#state_rcv{session = #radius_session{result_value = "success",
 		username = UserName, tab_id = Tab}, request =
 		#ts_request{param = #radius_request{type = auth}}}
 		= State, Opts, Close) ->
 	ok = radius_lib:register_user(Tab, UserName),
-	parse3(State, Opts, Close);
-parse2(#state_rcv{request = #ts_request{param = #radius_request{type = acct}},
+	parse4(State, Opts, Close);
+parse3(#state_rcv{request = #ts_request{param = #radius_request{type = acct}},
 		session = #radius_session{tab_id = Tab, username = PeerID}, dynvars = DynVars}
 		= State, Opts, Close) ->
 	NewDynVars = ts_dynvars:merge([{tab_id, Tab}, {username, PeerID}], DynVars),
 	NewState = State#state_rcv{dynvars = NewDynVars},
-	parse3(NewState, Opts, Close);
-parse2(State, Opts, Close) ->
-
-	parse3(State, Opts, Close).
+	parse4(NewState, Opts, Close);
+parse3(State, Opts, Close) ->
+	parse4(State, Opts, Close).
 %% @hidden
-parse3(#state_rcv{ack_done = true, dynvars = DynVars, request =
+parse4(#state_rcv{ack_done = true, dynvars = DynVars, request =
 		#ts_request{param = #radius_request{result_var = VarName}},
 		session = #radius_session{result_value = VarValue}}
 		= State, Opts, Close) ->
 	NewDynVars = set_dynvar(VarName, VarValue, DynVars),
 	NewState = State#state_rcv{dynvars = NewDynVars},
 	{NewState, Opts, Close};
-parse3(#state_rcv{ack_done = false} = State, Options, Close) ->
+parse4(#state_rcv{ack_done = false} = State, Options, Close) ->
 	{State, Options, Close}.
 
 -spec parse_config(Element, Conf) ->
