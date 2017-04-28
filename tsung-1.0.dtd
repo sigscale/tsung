@@ -505,6 +505,7 @@ repeat | if | change_type | foreach | set_option | interaction )*>
 	delay CDATA #IMPLIED
 	min NMTOKEN #IMPLIED
 	max NMTOKEN #IMPLIED
+	max_reg NMTOKEN #IMPLIED
 	result_var  CDATA #IMPLIED
 >
 
