@@ -183,7 +183,7 @@ find_table1(OP, CHost, [Tab | Tail]) ->
 		CHost ->
 			case ets:info(list_to_existing_atom(Tab), owner) of
 				OP ->
-					{ok, Tab};
+					{ok, list_to_existing_atom(Tab)};
 				_ ->
 					find_table1(OP, CHost, Tail)
 			end;
