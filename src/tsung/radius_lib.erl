@@ -173,28 +173,6 @@ stop(Tab, Key) ->
 %------------------------------------------------------------
 %% Internal Functions
 %------------------------------------------------------------
-authenticated_users(Tab, ChunkSize) ->
-	MatchSpec = [{'_', [], ['$_']}],
-	F1 = fun(#registered{username = U}) ->
-			mnesia:delete(?Registered, U, write),
-			ets:insert(Tab, #acc_session{username = U})
-	end,
-	F2 = fun() ->
-			case mnesia:select(?Registered, MatchSpec, ChunkSize, write) of
-				'$end_of_table' ->
-					'$end_of_table';
-				{Users, _} ->
-					lists:foreach(F1, Users),
-					ok
-			end
-	end,
-	case mnesia:transaction(F2) of
-		{atomic, Result} ->
-			Result;
-		{aborted, Reason} ->
-			throw(Reason)
-	end.
-
 find_table(OP) ->
 	{ok, CHost} = ts_utils:node_to_hostname(node()),
 	StringTabs = [atom_to_list(Tab) || Tab <- ets:all(), is_atom(Tab)],
