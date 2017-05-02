@@ -132,7 +132,7 @@ get_user(Tab, PrevUser) ->
 	User :: string().
 %% @doc lookup user record
 lookup_user(Tab, '$end_of_table', Interval) ->
-	do_loop(Tab, Interval);
+	do_sleep(Tab, Interval);
 lookup_user(Tab, Key, Interval) ->
 	case ets:lookup(Tab, Key) of
 		[{next_key, "$_info", _, _, _, _}] ->
@@ -196,10 +196,10 @@ find_table1(OP, CHost, [Tab | Tail]) ->
 find_table1(OP, CHost, []) ->
 	not_found.
 
-do_loop(Tab, Interval) ->
+do_sleep(Tab, Interval) ->
 	receive
 	after
-		30000 ->
+		Interval ->
 			lookup_user(Tab, ets:first(Tab), Interval)
 	end.
 
