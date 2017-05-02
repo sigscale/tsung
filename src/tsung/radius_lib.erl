@@ -155,17 +155,20 @@ lookup_user(Tab, Key, Interval) ->
 			lookup_user(Tab, ets:next(Tab, Key), Interval)
 	end.
 
+-spec stop(Tab, Key) ->
+		User | finish when
+	Tab :: atom(),
+	Key :: string(),
+	User :: string().
+%% @doc select username for send accounting stop
 stop(Tab, Key) ->
 	case ets:lookup(Tab, Key) of
 		[{next_key, "$_info", _, _, _, _}] ->
 			stop(Tab, ets:next(Tab, Key));
-		[#radius_user{username = undefined}] ->
-			stop(Tab, ets:next(Tab, Key));
 		[#radius_user{username = Key, start_time = STime}] when STime =/= undefined ->
-			ets:insert(Tab, #radius_user{username = undefined}),
+			ets:insert(Tab, #radius_user{username = Key}),
 			Key;
 		[#radius_user{}] ->
-			ets:insert(Tab, #radius_user{username = undefined}),
 			stop(Tab, ets:next(Tab, Key));
 		[] ->
 			finish
