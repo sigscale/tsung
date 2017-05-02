@@ -176,15 +176,21 @@ stop(Tab, Key) ->
 find_table(OP) ->
 	{ok, CHost} = ts_utils:node_to_hostname(node()),
 	StringTabs = [atom_to_list(Tab) || Tab <- ets:all(), is_atom(Tab)],
-	AvailableTables = [Table || "rt" ++_ = Table <- StringTabs],
-	AuthTabs = [{Table, ets:info(list_to_existing_atom(Table), owner)} || Table <- AvailableTables],
-	find_table(OP, AuthTabs).
+	find_table1(OP, CHost, StringTabs).
 %% @hidden
-find_table(OP, [{Tab, OP} | _]) ->
-	{ok, list_to_existing_atom(Tab)};
-find_table(OP, [_ | T]) ->
-	find_table(OP, T);
-find_table(_OP, []) ->
+find_table1(OP, CHost, [Tab | Tail]) ->
+	case string:sub_string(Tab, 1, string:len(CHost)) of
+		CHost ->
+			case ets:info(list_to_existing_atom(Tab), owner) of
+				OP ->
+					{ok, Tab};
+				_ ->
+					find_table1(OP, CHost, Tail)
+			end;
+		_ ->
+			find_table1(OP, CHost, Tail)
+	end;
+find_table1(OP, CHost, []) ->
 	not_found.
 
 do_loop(Tab, Interval) ->
