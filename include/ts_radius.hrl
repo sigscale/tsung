@@ -1,18 +1,6 @@
--define(Registered, registered).
--define(Timeout, 4000).
--define(ChunkSize, 10).
--define(SessionTab, accsession).
 -define(SessionTabOptions, [named_table, public, {keypos, 2}]).
 
 -record(radius_user, {username, start_time, last_update}).
-
--record(registered, {username, password}).
-
--record(acc_session,
-			{username,
-			type = start :: start | interim | stop}).
--record(info,
-			{auth_user_id, auth_pid, acct_user_id, acct_pid}).
 
 -record(radius_request,
 			{type :: auth | acc,
@@ -22,9 +10,9 @@
 			password :: string() | binary(),
 			secret :: string() | binary(),
 			cb_mod :: atom(),
-			duration,
-			interval,
-			interim,
+			duration :: integer(),
+			interval :: integer(),
+			interim :: integer(),
 			max_reg :: integer(),
 			auth_type = undefined :: undefined | pap | eap_pwd,
 			acc_type = start :: start | interim | stop,
