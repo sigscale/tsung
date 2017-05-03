@@ -92,7 +92,11 @@ transfer_ownsership(Tab) ->
 		[{_, _, _, _, _, PID}] ->
 			ok;
 		[{_, _, _, _, undefined, undefined}] ->
-			ok;
+			receive
+			after
+				300 ->
+					transfer_ownsership(Tab)
+			end;
 		[{_, _Key, AutherUserID, AuthPid, AcctUserID, AcctPid}] ->
 			ets:setopts(Tab, {heir, AcctPid,
 				[io:fwrite("Successfully transfer ownership {~p, ~p}
