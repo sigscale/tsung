@@ -326,8 +326,8 @@ add_dynparams2(_, Param, _DynVars) ->
 -spec terminate(State) ->
 		ok when
 	State :: #state_rcv{}.
-%% @doc Transfer ownsership of the ets table 
-terminate(#state_rcv{request = #ts_request{param = 
+%% @doc Transfer ownsership of the ets table
+terminate(#state_rcv{request = #ts_request{param =
 		#radius_request{type = auth}}, session =
 		#radius_session{tab_id = Tab}}) ->
 	radius_lib:transfer_ownsership(Tab);
