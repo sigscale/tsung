@@ -54,10 +54,17 @@ get_message1(Type, Data, #state_rcv{session = Session ,dynvars = DynVars} = Stat
 	{ok, CHost} = ts_utils:node_to_hostname(node()),
 	NasID = CHost ++ "_" ++ Type ++ integer_to_list(ID),
 	Tab = list_to_atom(NasID),
-	{ok, AuthTab} = radius_lib:install_db(Type, self(), NasID, Tab),
-	NewState = State#state_rcv{session = Session#radius_session{tab_id = AuthTab,
-			nas_id = atom_to_list(AuthTab)}},
-	get_message2(Data, NewState).
+	case radius_lib:install_db(Type, self(), NasID, Tab) of
+		{error, _} ->
+			Elapsed = ts_utils:elapsed(State#state_rcv.starttime, ?NOW),
+			self() ! timeout,
+			%% ts_mon:endclient({State#state_rcv.id, ?TIMESTAMP, Elapsed}), is it mandatory to do this ??
+			{<<"bogus">>, State#state_rcv.session};
+		{ok, AuthTab} ->
+			NewState = State#state_rcv{session = Session#radius_session{tab_id = AuthTab,
+					nas_id = atom_to_list(AuthTab)}},
+			get_message2(Data, NewState)
+	end.
 %% @hidden
 get_message2(#radius_request{type = auth, auth_type = 'eap-pwd'} = Data,
 		#state_rcv{session = #radius_session{data = undefined}} = State) ->
