@@ -159,9 +159,10 @@ lookup_user(Tab, Key) ->
 	end.
 
 -spec stop(Tab, Key) ->
-		User | finish when
+		{Type, User} when
 	Tab :: atom(),
 	Key :: string(),
+	Type :: start | stop,
 	User :: string().
 %% @doc select username for send accounting stop
 stop(Tab, Key) ->
@@ -170,11 +171,11 @@ stop(Tab, Key) ->
 			stop(Tab, ets:next(Tab, Key));
 		[#radius_user{username = Key, acct_start_time = STime}] when STime =/= undefined ->
 			ets:insert(Tab, #radius_user{username = Key}),
-			Key;
+			{stop, Key};
 		[#radius_user{}] ->
 			stop(Tab, ets:next(Tab, Key));
 		[] ->
-			finish
+			{start, ets:next(Tab, Key)}
 	end.
 %------------------------------------------------------------
 %% Internal Functions
