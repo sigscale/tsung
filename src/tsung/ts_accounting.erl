@@ -52,13 +52,13 @@ get_message(#radius_request{type = acct, secret = Secret},
 
 -spec parse(Data, State) ->
 			{NewState, Options, Close} when
-	Data :: binary(),
+	Data :: #radius{},
 	State :: #state_rcv{},
 	NewState :: #state_rcv{},
 	Options :: list(),
 	Close :: boolean().
 %% @doc Validate received radius packet
-parse(<<?AccountingResponse, _/binary>>, State) ->
+parse(#radius{code = ?AccountingResponse}, State) ->
 	parse1(State);
 parse(_, #state_rcv{session = #radius_session{radius_id = RadID} = Session} = State) ->
 	NextRadID = (RadID rem 255) + 1,

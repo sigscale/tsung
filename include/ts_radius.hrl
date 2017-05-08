@@ -27,6 +27,8 @@
 			result_value :: atom(),
 			tab_id :: atom(),
 			tot_reg = 0 :: integer(),
+			interval :: integer(),
+			duration :: integer(),
 			data :: string() | binary()}).
 
 -record(pwd,

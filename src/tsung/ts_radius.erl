@@ -11,6 +11,7 @@
 -include("ts_config.hrl").
 -include("ts_radius.hrl").
 -include("xmerl.hrl").
+-include_lib("radius/include/radius.hrl").
 
 -define(RadID, 10).
 -define(EapID, 1).
@@ -173,100 +174,122 @@ get_message7(Data, State) ->
 %% @doc Purpose: Parse the given data and return a new state
 %% 	no parsing . use only ack,
 %% `Options' is list of options for socket.
-parse(Data, #state_rcv{request = #ts_request{param
-		= #radius_request{cb_mod = CbMod}}} = State) ->
-	{NS, Opts, Close} = CbMod:parse(Data, State),
-	parse1(NS, Opts, Close).
+parse(#radius_request{cb_mod = CbMod} = Data, State) ->
+	{ok, RadiusPacket} = radius:codec(Data),
+	{NS, Opts, Close} = CbMod:parse(RadiusPacket, State),
+	parse1(RadiusPacket, NS, Opts, Close).
 %% @hidden
-parse1(#state_rcv{session = #radius_session{result_value = "success"},
+parse1(#radius{code = ?AccessAccept, attributes = Attributes},
+		#state_rcv{request = #ts_request{param = #radius_request{interval = Interim,
+		duration = Duration}}, session = Session} = State, Opts, Close) ->
+	{SessionTimeout, InterimInterval} =
+				case {radius_attributes:codec(?SessionTimeout, Attributes),
+						radius_attributes:codec(?AcctInterimInterval, Attributes)} of
+			{{ok, ST}, {ok, II}} ->
+				{ST, II};
+			{{ok, ST}, {error, _}} ->
+				{ST, Interim};
+			{{error, _}, {ok, II}} ->
+				{Duration, II};
+			{_, _} ->
+				{Duration, Interim}
+	end,
+	NewSession = Session#radius_session{interval = InterimInterval,
+			duration = SessionTimeout},
+	NextState = State#state_rcv{session = NewSession},
+	parse2(NextState, Opts, Close);
+parse1(_, NS, Opts, Close) ->
+	parse2(NS, Opts, Close).
+%% @hidden
+parse2(#state_rcv{session = #radius_session{result_value = "success"},
 		request = #ts_request{param = #radius_request{type = auth,
 		auth_type = 'pap'}}} = State, Opts, Close) ->
 	ts_mon:add({count, 'AccessAccept-PAP'}),
-	parse2(State, Opts, Close);
-parse1(#state_rcv{session = #radius_session{result_value = "failure"},
+	parse3(State, Opts, Close);
+parse2(#state_rcv{session = #radius_session{result_value = "failure"},
 		request = #ts_request{param = #radius_request{type = auth,
 		auth_type = 'pap'}}} = State, Opts, Close) ->
 	ts_mon:add({count, 'AccessReject-PAP'}),
-	parse2(State, Opts, Close);
-parse1(#state_rcv{session = #radius_session{result_value = "challenge"},
+	parse3(State, Opts, Close);
+parse2(#state_rcv{session = #radius_session{result_value = "challenge"},
 		request = #ts_request{param = #radius_request{type = auth,
 		auth_type = 'eap-pwd'}}} = State, Opts, Close) ->
 	ts_mon:add({count, 'AccessChallenge-EAP-PWD'}),
-	parse2(State, Opts, Close);
-parse1(#state_rcv{session = #radius_session{result_value = "success"},
+	parse3(State, Opts, Close);
+parse2(#state_rcv{session = #radius_session{result_value = "success"},
 		request = #ts_request{param = #radius_request{type = auth,
 		auth_type = 'eap-pwd'}}} = State, Opts, Close) ->
 	ts_mon:add({count, 'AccessAccept-EAP-PWD'}),
-	parse2(State, Opts, Close);
-parse1(#state_rcv{session = #radius_session{result_value = "failure"},
+	parse3(State, Opts, Close);
+parse2(#state_rcv{session = #radius_session{result_value = "failure"},
 		request = #ts_request{param = #radius_request{type = auth,
 		auth_type = 'eap-pwd'}}} = State, Opts, Close) ->
 	ts_mon:add({count, 'AccessReject-EAP-PWD'}),
-	parse2(State, Opts, Close);
-parse1(#state_rcv{session = #radius_session{result_value = "start"},
+	parse3(State, Opts, Close);
+parse2(#state_rcv{session = #radius_session{result_value = "start"},
 		request = #ts_request{param = #radius_request{type = acct}}} = State,
 		Opts, Close) ->
 	ts_mon:add({count, 'AccountingStart'}),
-	parse2(State, Opts, Close);
-parse1(#state_rcv{session = #radius_session{result_value = "interim"},
+	parse3(State, Opts, Close);
+parse2(#state_rcv{session = #radius_session{result_value = "interim"},
 		request = #ts_request{param = #radius_request{type = acct}}} = State,
 		Opts, Close) ->
 	ts_mon:add({count, 'AccountingInterimUpdate'}),
-	parse2(State, Opts, Close);
-parse1(#state_rcv{session = #radius_session{result_value = "stop"},
+	parse3(State, Opts, Close);
+parse2(#state_rcv{session = #radius_session{result_value = "stop"},
 		request = #ts_request{param = #radius_request{type = acct}}} = State,
 		Opts, Close) ->
 	ts_mon:add({count, 'AccountingStop'}),
-	parse2(State, Opts, Close).
+	parse3(State, Opts, Close).
 %% @hidden
-parse2(#state_rcv{request = #ts_request{param = #radius_request{type = auth,
+parse3(#state_rcv{request = #ts_request{param = #radius_request{type = auth,
 		max_reg = MaxReg}}, session = #radius_session{result_value = "success",
 		tot_reg = TotReg} = Session} = State, Opts, Close) ->
 	case TotReg > MaxReg of
 		true ->
-			parse3(State#state_rcv{ack_done = false}, Opts, true);
+			parse4(State#state_rcv{ack_done = false}, Opts, true); %%TODO sleep for awhile
 		false ->
 			NewSession = Session#radius_session{tot_reg = TotReg + 1},
 			NewState = State#state_rcv{session = NewSession},
-			parse3(NewState, Opts, Close)
+			parse4(NewState, Opts, Close)
 	end;
-parse2(#state_rcv{request = #ts_request{param = #radius_request{type = acct}}, session = #radius_session{data =
+parse3(#state_rcv{request = #ts_request{param = #radius_request{type = acct}}, session = #radius_session{data =
 		#accounting{finish = true}}} = State, Opts, _Close) ->
-	parse3(State#state_rcv{ack_done = false}, Opts, true);
-parse2(State, Opts, Close) ->
-	parse3(State, Opts, Close).
+	parse4(State#state_rcv{ack_done = false}, Opts, true);
+parse3(State, Opts, Close) ->
+	parse4(State, Opts, Close).
 %% @hidden
-parse3(#state_rcv{session = #radius_session{result_value = "success",
+parse4(#state_rcv{session = #radius_session{result_value = "success",
 		username = UserName, tab_id = Tab} = Session, request =
 		#ts_request{param = #radius_request{type = auth,
 		auth_type = 'eap-pwd'}}} = State, Opts, Close) ->
 	ok = radius_lib:register_user(Tab, UserName),
 	NewSession = Session#radius_session{username = undefined},
 	NewState = State#state_rcv{session = NewSession},
-	parse4(NewState, Opts, Close);
-parse3(#state_rcv{session = #radius_session{result_value = "success",
+	parse5(NewState, Opts, Close);
+parse4(#state_rcv{session = #radius_session{result_value = "success",
 		username = UserName, tab_id = Tab}, request =
 		#ts_request{param = #radius_request{type = auth}}}
 		= State, Opts, Close) ->
 	ok = radius_lib:register_user(Tab, UserName),
-	parse4(State, Opts, Close);
-parse3(#state_rcv{request = #ts_request{param = #radius_request{type = acct}},
+	parse5(State, Opts, Close);
+parse4(#state_rcv{request = #ts_request{param = #radius_request{type = acct}},
 		session = #radius_session{tab_id = Tab, username = PeerID}, dynvars = DynVars}
 		= State, Opts, Close) ->
 	NewDynVars = ts_dynvars:merge([{tab_id, Tab}, {username, PeerID}], DynVars),
 	NewState = State#state_rcv{dynvars = NewDynVars},
-	parse4(NewState, Opts, Close);
-parse3(State, Opts, Close) ->
-	parse4(State, Opts, Close).
+	parse5(NewState, Opts, Close);
+parse4(State, Opts, Close) ->
+	parse5(State, Opts, Close).
 %% @hidden
-parse4(#state_rcv{ack_done = true, dynvars = DynVars, request =
+parse5(#state_rcv{ack_done = true, dynvars = DynVars, request =
 		#ts_request{param = #radius_request{result_var = VarName}},
 		session = #radius_session{result_value = VarValue}}
 		= State, Opts, Close) ->
 	NewDynVars = set_dynvar(VarName, VarValue, DynVars),
 	NewState = State#state_rcv{dynvars = NewDynVars},
 	{NewState, Opts, Close};
-parse4(#state_rcv{ack_done = false} = State, Options, Close) ->
+parse5(#state_rcv{ack_done = false} = State, Options, Close) ->
 	{State, Options, Close}.
 
 -spec parse_config(Element, Conf) ->
