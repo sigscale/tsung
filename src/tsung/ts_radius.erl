@@ -143,11 +143,11 @@ get_message6(#radius_request{username = PeerID} = Data,
 		#state_rcv{session = #radius_session{tab_id = Tab,
 		data = #accounting{type = stop} = Acct} = Session} = State) ->
 	case radius_lib:stop(Tab, PeerID) of
-		finish ->
+		{start, User} ->
 			NewSession = Session#radius_session{data =
-				Acct#accounting{finish = true}},
-			get_message7(Data, State#state_rcv{session = NewSession});
-		User ->
+				Acct#accounting{type = start}},
+			get_message4(Data, State#state_rcv{session = NewSession});
+		{stop, User} ->
 			get_message7(Data, State#state_rcv{session =
 					Session#radius_session{username = User}})
 	end;
