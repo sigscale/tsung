@@ -31,30 +31,28 @@ get_message(#radius_request{username = PeerID,
 	AccessReqest = #radius{code = ?AccessRequest, id = RadID, authenticator = Authenticator,
 			attributes = A9},
 	AccessReqestPacket= radius:codec(AccessReqest),
-	NewSession = Session#radius_session{username = PeerID, mac = MAC, 
+	NewSession = Session#radius_session{username = PeerID, mac = MAC,
 		radius_id = RadID},
 	{AccessReqestPacket, NewSession}.
 
 -spec parse(Data, State) ->
 			{NewState, Options, Close} when
-	Data :: binary(),
+	Data :: #radius{},
 	State :: #state_rcv{},
 	NewState :: #state_rcv{},
 	Options :: list(),
 	Close :: boolean().
 %% @doc Validate received radius packet
-parse(<<?AccessReject, _/binary>>,#state_rcv{session
+parse(#radius{code = ?AccessReject},#state_rcv{session
 		= #radius_session{radius_id = RadID} = Session} = State) ->
-	NextRadID = (RadID rem 255) + 1, 
+	NextRadID = (RadID rem 255) + 1,
 	NewSession = Session#radius_session{radius_id = NextRadID,
 		result_value = "failure"},
 	NewState = State#state_rcv{ack_done = true, session = NewSession},
 	{NewState, [], false};
-parse(AccessAcceptPacket, #state_rcv{session 
-		= #radius_session{radius_id = RadID} = Session} = State) ->
-	#radius{code = ?AccessAccept, id = RadID} =
-			radius:codec(AccessAcceptPacket),
-	NextRadID = (RadID rem 255) + 1, 
+parse(#radius{code = ?AccessAccept, id = RadID}, #state_rcv{session =
+		#radius_session{radius_id = RadID} = Session} = State) ->
+	NextRadID = (RadID rem 255) + 1,
 	NewSession = Session#radius_session{radius_id = NextRadID,
 		result_value = "success"},
 	NewState = State#state_rcv{ack_done = true, session = NewSession},

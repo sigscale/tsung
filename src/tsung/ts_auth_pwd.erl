@@ -74,13 +74,13 @@ get_message(#radius_request{username = PeerID, secret = Secret},
 	
 -spec parse(Data, State) ->
 			{NewState, Options, Close} when
-	Data :: binary(),
+	Data :: #radius{},
 	State :: #state_rcv{},
 	NewState :: #state_rcv{},
 	Options :: list(),
 	Close :: boolean().
 %% @doc Validate received radius packet
-parse(<<?AccessReject, _/binary>>, #state_rcv{session
+parse(#radius{code = ?AccessReject}, #state_rcv{session
 		= #radius_session{data = #pwd{eap_id = EapID},
 		radius_id = RadID}} = State) ->
 	NewEapID = (EapID rem 255) + 1,
@@ -90,10 +90,10 @@ parse(<<?AccessReject, _/binary>>, #state_rcv{session
 			result_value = "failure", radius_id = NextRadID},
 	NewState = State#state_rcv{session = NewSession, ack_done = true},
 	{NewState, [], false};
-parse(<<?AccessChallenge, _/binary>> = Data,
-		#state_rcv{session = #radius_session{data = #pwd{state = id,
-		req_auth = ReqAuth} = Eap, radius_id = RadID} = Session, request =
-		#ts_request{param = #radius_request{secret = Secret}}} = State) ->
+parse(#radius{code = ?AccessChallenge} = Data, #state_rcv{session =
+		#radius_session{data = #pwd{state = id, req_auth = ReqAuth} =
+		Eap, radius_id = RadID} = Session, request = #ts_request{param =
+		#radius_request{secret = Secret}}} = State) ->
 	{EapID, Token, ServerID} = receive_id(Data, Secret, ReqAuth, RadID),
 	NewEap = Eap#pwd{eap_id = EapID, token = Token, server_id = ServerID},
 	NextRadID = (RadID rem 255) + 1,
@@ -101,7 +101,7 @@ parse(<<?AccessChallenge, _/binary>> = Data,
 		result_value = "challenge"},
 	NewState = State#state_rcv{session = NewSession, ack_done = true},
 	{NewState, [], false};
-parse(<<?AccessChallenge, _/binary>> = Data,
+parse(#radius{code = ?AccessChallenge} = Data,
 		#state_rcv{session = #radius_session{data = #pwd{state = commit,
 		req_auth = ReqAuth} = Eap, radius_id = RadID} = Session, request =
 		#ts_request{param = #radius_request{secret = Secret}}} = State) ->
@@ -111,7 +111,7 @@ parse(<<?AccessChallenge, _/binary>> = Data,
 	NewSession = Session#radius_session{radius_id = NextRadID, data = NewEap},
 	NewState = State#state_rcv{session = NewSession, ack_done = true},
 	{NewState, [], false};
-parse(<<?AccessChallenge, _/binary>> = Data,
+parse(#radius{code = ?AccessChallenge} = Data,
 		#state_rcv{session = #radius_session{data = #pwd{state = confirm,
 		req_auth = ReqAuth} = Eap, radius_id = RadID} = Session, request =
 		#ts_request{param = #radius_request{secret = Secret}}} = State) ->
@@ -122,7 +122,7 @@ parse(<<?AccessChallenge, _/binary>> = Data,
 	NewSession = Session#radius_session{radius_id = NextRadID, data = NewEap},
 	NewState = State#state_rcv{session = NewSession, ack_done = true},
 	{NewState, [], false};
-parse(<<?AccessAccept, _/binary>> = Data,
+parse(#radius{code = ?AccessAccept} = Data,
 		#state_rcv{session = #radius_session{username = PeerID,
 		data = #pwd{state = success, req_auth = ReqAuth, eap_id = EapID},
 		radius_id = RadID} = _Session, request = #ts_request{param =
@@ -229,10 +229,9 @@ access_request(NasID, Secret, PeerID, MAC, Auth, RadID, EapMsg) ->
 	radius:codec(Request2).
 
 receive_radius(Code, RadPacket, Secret, RadId, ReqAuth) ->
-	Resp1 = radius:codec(RadPacket),
 	#radius{code = Code, id = RadId, authenticator = RespAuth,
-		attributes = BinRespAttr1} = Resp1,
-	Resp2 = Resp1#radius{authenticator = ReqAuth},
+		attributes = BinRespAttr1} = RadPacket,
+	Resp2 = RadPacket#radius{authenticator = ReqAuth},
 	RespPacket2 = radius:codec(Resp2),
 	RespAuth = binary_to_list(crypto:hash(md5, [RespPacket2, Secret])),
 	RespAttr1 = radius_attributes:codec(BinRespAttr1),
