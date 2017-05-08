@@ -260,18 +260,23 @@ parse3(State, Opts, Close) ->
 	parse4(State, Opts, Close).
 %% @hidden
 parse4(#state_rcv{session = #radius_session{result_value = "success",
-		username = UserName, tab_id = Tab} = Session, request =
-		#ts_request{param = #radius_request{type = auth,
-		auth_type = 'eap-pwd'}}} = State, Opts, Close) ->
-	ok = radius_lib:register_user(Tab, UserName),
+		username = Username, tab_id = Tab, interval = Interval,
+		duration = Duration} = Session, request = #ts_request{param =
+		#radius_request{type = auth, auth_type = 'eap-pwd'}}}
+		= State, Opts, Close) ->
+	RegRecord = #radius_user{username = Username, interval = Interval,
+			session_timeout = Duration, reg_time = erlang:now()},
+	ok = radius_lib:register_user(Tab, RegRecord),
 	NewSession = Session#radius_session{username = undefined},
 	NewState = State#state_rcv{session = NewSession},
 	parse5(NewState, Opts, Close);
 parse4(#state_rcv{session = #radius_session{result_value = "success",
-		username = UserName, tab_id = Tab}, request =
-		#ts_request{param = #radius_request{type = auth}}}
-		= State, Opts, Close) ->
-	ok = radius_lib:register_user(Tab, UserName),
+		username = Username, tab_id = Tab, interval = Interval,
+		duration = Duration}, request = #ts_request{param =
+		#radius_request{type = auth}}} = State, Opts, Close) ->
+	RegRecord = #radius_user{username = Username, interval = Interval,
+			session_timeout = Duration, reg_time = erlang:now()},
+	ok = radius_lib:register_user(Tab, RegRecord),
 	parse5(State, Opts, Close);
 parse4(#state_rcv{request = #ts_request{param = #radius_request{type = acct}},
 		session = #radius_session{tab_id = Tab, username = PeerID}, dynvars = DynVars}

@@ -1,6 +1,13 @@
 -define(SessionTabOptions, [named_table, public, {keypos, 2}]).
 
--record(radius_user, {username, start_time, last_update}).
+-record(radius_user,
+			{username :: string(),
+			registered = true :: boolean(),
+			reg_time :: tuple(),
+			session_timeout :: integer(),
+			interval :: integer(),
+			acct_start_time :: tuple(),
+			last_interim_update :: tuple()}).
 
 -record(radius_request,
 			{type :: auth | acc,

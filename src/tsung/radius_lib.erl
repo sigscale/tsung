@@ -72,15 +72,18 @@ install_db("acct", AcctPid, NasID, Tab) ->
 			end
 	end.
 
--spec register_user(Tab, User) ->
+-spec register_user(Tab, UserRecord) ->
 		ok  when
 	Tab :: atom(),
-	User :: binary() | list().
+	UserRecord :: #radius_user{}.
 %% @doc Register authenticated users
-register_user(Tab, User) when is_binary(User)->
-	register_user(Tab, binary_to_list(User));
-register_user(Tab, User) when is_list(User) ->
-	ets:insert(Tab, #radius_user{username = User}),
+register_user(Tab, #radius_user{username = User} = UR)
+		when is_binary(User)->
+	NR = UR#radius_user{username = binary_to_list(User)},
+	register_user(Tab, NR);
+register_user(Tab, #radius_user{username = User} =UR)
+		when is_list(User) ->
+	ets:insert(Tab, UR),
 	ok.
 
 -spec transfer_ownsership(Tab) ->
@@ -137,16 +140,16 @@ lookup_user(Tab, Key, Interval) ->
 	case ets:lookup(Tab, Key) of
 		[{next_key, "$_info", _, _, _, _}] ->
 			lookup_user(Tab, ets:next(Tab, Key), Interval);
-		[#radius_user{username = Key, start_time = undefined,
-				last_update = undefined} = UR] ->
-			ets:insert(Tab, UR#radius_user{start_time = erlang:now(),
-					last_update = erlang:now()}),
+		[#radius_user{username = Key, acct_start_time = undefined,
+				last_interim_update = undefined} = UR] ->
+			ets:insert(Tab, UR#radius_user{acct_start_time = erlang:now(),
+					last_interim_update = erlang:now()}),
 			{start, Key};
-		[#radius_user{username = Key, last_update = LUpdate} = UR] ->
+		[#radius_user{username = Key, last_interim_update = LUpdate} = UR] ->
 			Elapsed = ts_utils:elapsed(LUpdate, erlang:now()),
 			case Elapsed > Interval of
 				true ->
-					ets:insert(Tab, UR#radius_user{last_update = erlang:now()}),
+					ets:insert(Tab, UR#radius_user{last_interim_update = erlang:now()}),
 					{interim, Key};
 				false ->
 					lookup_user(Tab, ets:next(Tab, Key), Interval)
@@ -165,7 +168,7 @@ stop(Tab, Key) ->
 	case ets:lookup(Tab, Key) of
 		[{next_key, "$_info", _, _, _, _}] ->
 			stop(Tab, ets:next(Tab, Key));
-		[#radius_user{username = Key, start_time = STime}] when STime =/= undefined ->
+		[#radius_user{username = Key, acct_start_time = STime}] when STime =/= undefined ->
 			ets:insert(Tab, #radius_user{username = Key}),
 			Key;
 		[#radius_user{}] ->
