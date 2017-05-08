@@ -3,7 +3,7 @@
 
 -export([install_db/4]).
 -export([user/1]).
--export([stop/2, lookup_user/3, register_user/2, transfer_ownsership/1, get_user/2]).
+-export([stop/2, lookup_user/2, register_user/2, transfer_ownsership/1, get_user/2]).
 
 -include("ts_radius.hrl").
 -include("ts_config.hrl").
@@ -126,36 +126,36 @@ get_user(Tab, PrevUser) ->
 			User
 	end.
 
--spec lookup_user(Tab, Key, Interval) ->
+-spec lookup_user(Tab, Key) ->
 		{Type, User} when
 	Tab :: atom(),
 	Key :: string() | '$end_of_table',
-	Interval :: integer(),
 	Type :: interim | start,
 	User :: string().
 %% @doc lookup user record
-lookup_user(Tab, '$end_of_table', Interval) ->
-	do_sleep(Tab, Interval);
-lookup_user(Tab, Key, Interval) ->
+lookup_user(Tab, '$end_of_table') ->
+	do_sleep(Tab, 18000);
+lookup_user(Tab, Key) ->
 	case ets:lookup(Tab, Key) of
 		[{next_key, "$_info", _, _, _, _}] ->
-			lookup_user(Tab, ets:next(Tab, Key), Interval);
+			lookup_user(Tab, ets:next(Tab, Key));
 		[#radius_user{username = Key, acct_start_time = undefined,
 				last_interim_update = undefined} = UR] ->
 			ets:insert(Tab, UR#radius_user{acct_start_time = erlang:now(),
 					last_interim_update = erlang:now()}),
 			{start, Key};
-		[#radius_user{username = Key, last_interim_update = LUpdate} = UR] ->
+		[#radius_user{username = Key, last_interim_update = LUpdate,
+				interval = Interval} = UR] ->
 			Elapsed = ts_utils:elapsed(LUpdate, erlang:now()),
 			case Elapsed > Interval of
 				true ->
 					ets:insert(Tab, UR#radius_user{last_interim_update = erlang:now()}),
 					{interim, Key};
 				false ->
-					lookup_user(Tab, ets:next(Tab, Key), Interval)
+					lookup_user(Tab, ets:next(Tab, Key))
 			end;
 		[] ->
-			lookup_user(Tab, ets:next(Tab, Key), Interval)
+			lookup_user(Tab, ets:next(Tab, Key))
 	end.
 
 -spec stop(Tab, Key) ->
@@ -203,7 +203,7 @@ do_sleep(Tab, Interval) ->
 	receive
 	after
 		Interval ->
-			lookup_user(Tab, ets:first(Tab), Interval)
+			lookup_user(Tab, ets:first(Tab))
 	end.
 
 get_closest_pid(Group, AcctPid) ->
