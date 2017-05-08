@@ -49,6 +49,7 @@ get_message(#radius_request{type = acct} = Data,
 	get_message1("acct", Data, State);
 get_message(Data, State) ->
 	get_message2(Data, State).
+
 %% @hidden
 get_message1(Type, Data, #state_rcv{session = Session ,dynvars = DynVars} = State) ->
 	{ok, ID} = ts_dynvars:lookup(tsung_userid, DynVars),
@@ -66,6 +67,7 @@ get_message1(Type, Data, #state_rcv{session = Session ,dynvars = DynVars} = Stat
 					nas_id = atom_to_list(AuthTab)}},
 			get_message2(Data, NewState)
 	end.
+
 %% @hidden
 get_message2(#radius_request{type = auth, auth_type = 'eap-pwd'} = Data,
 		#state_rcv{session = #radius_session{data = undefined}} = State) ->
@@ -77,11 +79,13 @@ get_message2(#radius_request{type = acct} = Data, #state_rcv{session =
 	get_message3(Data, AccRecord, State);
 get_message2(Data, State) ->
 	get_message4(Data, State).
+
 %% @hidden
 get_message3(Data, RecordData, #state_rcv{session = Session} = State) ->
 	NewSession = Session#radius_session{data = RecordData},
 	NewState = State#state_rcv{session = NewSession},
 	get_message4(Data, NewState).
+
 %% @hidden
 get_message4(#radius_request{interim = false, username = PeerID} = Data,
 		#state_rcv{session = #radius_session{data = Acct} = Session } = State)
@@ -90,9 +94,21 @@ get_message4(#radius_request{interim = false, username = PeerID} = Data,
 		data = Acct#accounting{type = stop}},
 	NewState = State#state_rcv{session = NewSession},
 	get_message5(Data, NewState);
-get_message4(#radius_request{type = acct, duration = Duration} = Data,
-		#state_rcv{session = #radius_session{data = Acct} = Session} = State)
-		when Acct#accounting.type =/= stop ->
+get_message4(#radius_request{duration = Duration} = Data,
+		#state_rcv{session = #radius_session{duration = undefined}
+		= Session} = State) ->
+	NewSession = Session#radius_session{duration = Duration},
+	NewState = State#state_rcv{session = NewSession},
+	get_message4(Data, NewState);
+get_message4(#radius_request{interval = Interval} = Data,
+		#state_rcv{session = #radius_session{interval = undefined}
+		= Session} = State) ->
+	NewSession = Session#radius_session{interval = Interval},
+	NewState = State#state_rcv{session = NewSession},
+	get_message4(Data, NewState);
+get_message4(#radius_request{type = acct} = Data,
+		#state_rcv{session = #radius_session{duration = Duration,
+		data = Acct} = Session} = State) when Acct#accounting.type =/= stop ->
 	Elapsed = ts_utils:elapsed(Acct#accounting.start_time, erlang:now()),
 	case Elapsed > Duration of
 		true ->
@@ -112,10 +128,9 @@ get_message5(#radius_request{type = acct, username = "_start"} = Data,
 	User = radius_lib:get_user(Tab, first),
 	NewData = Data#radius_request{username = User},
 	get_message5(NewData, State);
-get_message5(#radius_request{type = acct, username = PeerID,
-		interval = Interval} = Data, #state_rcv{session =
-		#radius_session{tab_id = Tab, data = #accounting{type = start} = Acct}
-		= Session} = State) ->
+get_message5(#radius_request{type = acct, username = PeerID} = Data,
+		#state_rcv{session = #radius_session{tab_id = Tab, interval = Interval,
+		data = #accounting{type = start} = Acct} = Session} = State) ->
 	case radius_lib:lookup_user(Tab, PeerID, Interval) of
 		{start, User} ->
 			NewSession = Session#radius_session{username = User},
@@ -142,10 +157,9 @@ get_message6(#radius_request{username = PeerID} = Data,
 			get_message7(Data, State#state_rcv{session =
 					Session#radius_session{username = User}})
 	end;
-get_message6(#radius_request{interim = true, interval = Interval,
-		username = PeerID} = Data, #state_rcv{session =
-		#radius_session{tab_id = Tab, data = #accounting{type = interim}
-		= Acct} = Session} = State) ->
+get_message6(#radius_request{interim = true, username = PeerID} = Data,
+		#state_rcv{session = #radius_session{interval = Interval, tab_id = Tab,
+		data = #accounting{type = interim} = Acct} = Session} = State) ->
 	case radius_lib:lookup_user(Tab, PeerID, Interval) of
 		{interim, User} ->
 			NewState = State#state_rcv{session =
