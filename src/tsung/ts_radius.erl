@@ -255,15 +255,12 @@ parse3(#state_rcv{request = #ts_request{param = #radius_request{type = auth,
 		tot_reg = TotReg} = Session} = State, Opts, Close) ->
 	case TotReg > MaxReg of
 		true ->
-			parse4(State#state_rcv{ack_done = false}, Opts, true); %%TODO sleep for awhile
+			parse4(State, Opts, Close); %%TODO sleep for awhile
 		false ->
 			NewSession = Session#radius_session{tot_reg = TotReg + 1},
 			NewState = State#state_rcv{session = NewSession},
 			parse4(NewState, Opts, Close)
 	end;
-parse3(#state_rcv{request = #ts_request{param = #radius_request{type = acct}}, session = #radius_session{data =
-		#accounting{finish = true}}} = State, Opts, _Close) ->
-	parse4(State#state_rcv{ack_done = false}, Opts, true);
 parse3(State, Opts, Close) ->
 	parse4(State, Opts, Close).
 %% @hidden
