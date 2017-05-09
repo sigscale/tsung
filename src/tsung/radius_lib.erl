@@ -97,7 +97,7 @@ reregister_user(Tab, Sleep) ->
 	MatchSpec = [{{'_', true, '$1', '$2', '_', '_', '_'}, [{'>=',
 	{'-', Now, '$1'}, '$2'}], ['$_']}],
 	case  ets:select(Tab, MatchSpec, 1) of
-		[#radius_user{username = Key}] ->
+		{[#radius_user{username = Key}], _} ->
 			Key;
 		'$end_of_table' ->
 			receive
@@ -223,10 +223,10 @@ get_closest_pid1({error, _} = Reason, _Gropu, _AcctPid) ->
 	Reason.
 
 acct_start(Tab) ->
-	MatchSpec =  [{{'_', true, '_', '_', '_', '_', undefined,
+	MatchSpec =  [{{'_', '_', true, '_', '_', '_', undefined,
 		'_'}, [], ['$_']}],
 	case  ets:select(Tab, MatchSpec, 1) of
-		[#radius_user{username = Key} = UR] ->
+		{[#radius_user{username = Key} = UR], _} ->
 			NOW = erlang:system_time(millisecond),
 			ets:insert(Tab, UR#radius_user{acct_start_time = NOW,
 				last_interim_update = NOW}),
@@ -238,10 +238,10 @@ acct_start(Tab) ->
 
 acct_interim(Tab) ->
 	Now = erlang:system_time(millisecond),
-	MatchSpec = [{{'_', true, '_', '_', '$1', '_', '$2'},
+	MatchSpec = [{{'_', '_', true, '_', '$1', '_', '$2'},
 	[{'>=', {'-', Now, '$2'}, '$1'}], ['$_']}],
 	case  ets:select(Tab, MatchSpec, 1) of
-		[#radius_user{username = Key} = UR] ->
+		{[#radius_user{username = Key} = UR], _} ->
 			ets:insert(Tab, UR#radius_user{last_interim_update = Now}),
 			Key;
 		'$end_of_table' ->
@@ -249,10 +249,10 @@ acct_interim(Tab) ->
 	end.
 	
 acct_stop(Tab) ->
-	MatchSpec =  [{{'_', true, '$1', '_', '_', '_', '$2', '_'},
+	MatchSpec =  [{{'_', '_', true, '$1', '_', '_', '$2', '_'},
 		[{'>', '$1', '$2'}], ['$_']}],
 	case  ets:select(Tab, MatchSpec, 1) of
-		[#radius_user{username = Key}] ->
+		{[#radius_user{username = Key}], _} ->
 			Key;
 		'$end_of_table' ->
 			not_found
