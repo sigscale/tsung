@@ -3,11 +3,11 @@
 -record(radius_user,
 			{username :: string(),
 			registered = true :: boolean(),
-			reg_time :: tuple(),
+			reg_time :: integer(),
 			session_timeout :: integer(),
 			interval :: integer(),
-			acct_start_time :: tuple(),
-			last_interim_update :: tuple()}).
+			acct_start_time :: integer(),
+			last_interim_update :: integer()}).
 
 -record(radius_request,
 			{type :: auth | acc,
@@ -17,8 +17,8 @@
 			password :: string() | binary(),
 			secret :: string() | binary(),
 			cb_mod :: atom(),
-			duration :: integer(),
-			interval :: integer(),
+			duration = 3600:: integer(),
+			interval = 180 :: integer(),
 			interim :: integer(),
 			max_reg :: integer(),
 			auth_type = undefined :: undefined | pap | eap_pwd,
