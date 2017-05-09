@@ -255,7 +255,7 @@ parse2(#state_rcv{session = #radius_session{result_value = "stop"},
 parse3(#state_rcv{request = #ts_request{param = #radius_request{type = auth,
 		max_reg = MaxReg}}, session = #radius_session{result_value = "success",
 		tot_reg = TotReg} = Session} = State, Opts, Close) ->
-	case TotReg > MaxReg of
+	case MaxReg + 1 > ets:info(Tab, size) of
 		true ->
 			parse4(State, Opts, Close); %%TODO sleep for awhile
 		false ->
