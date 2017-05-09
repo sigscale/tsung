@@ -155,26 +155,27 @@ get_user(Tab, PrevUser) ->
 	User :: string().
 %% @doc lookup user record
 lookup_user(Tab) ->
-	case acct_start(Tab) of
+	case acct_stop(Tab) of
 		not_found ->
 			case acct_interim(Tab) of
 				not_found ->
-					case acct_stop(Tab) of
+					case acct_start(Tab) of
 						not_found ->
-							Interval = ts_stats:uniform(1000, 2000),
+							Interval =
+								ts_stats:uniform(1000, 2000),
 							receive
 							after
 								Interval ->
 									lookup_user(Tab)
 							end;
 						StpU ->
-							{stop, StpU}
+							{start, StpU}
 					end;
 				InterU ->
 					{interim, InterU}
 			end;
 		StrtUser ->
-			{start, StrtUser}
+			{stop, StrtUser}
 	end.
 
 %------------------------------------------------------------
