@@ -161,7 +161,12 @@ lookup_user(Tab) ->
 				not_found ->
 					case acct_stop(Tab) of
 						not_found ->
-							sleep; % TODO do sleep
+							Sleep = ts_stats:uniform(50000, 100000),
+							receive
+							after
+								Sleep ->
+									lookup_user(Tab)
+							end;
 						StpU ->
 							{stop, StpU}
 					end;
