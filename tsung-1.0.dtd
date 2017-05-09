@@ -513,18 +513,17 @@ repeat | if | change_type | foreach | set_option | interaction )*>
 <!ATTLIST pap
 	cb_mod CDATA #REQUIRED
 	password CDATA #REQUIRED
+	duration NMTOKEN #IMPLIED
 >
 
 <!ELEMENT eap_pwd EMPTY>
 <!ATTLIST eap_pwd
 	cb_mod CDATA #REQUIRED
 	password CDATA #REQUIRED
+	duration NMTOKEN #IMPLIED
 >
 
 <!ELEMENT accounting EMPTY>
 <!ATTLIST accounting
 	cb_mod CDATA #REQUIRED
-	duration NMTOKEN #IMPLIED
-	interim (true | false) #IMPLIED
-	interval NMTOKEN #IMPLIED
 >
