@@ -99,7 +99,7 @@ get_message4(#radius_request{duration = Duration} = Data,
 		= Session} = State) ->
 	NewSession = Session#radius_session{duration = Duration},
 	NewState = State#state_rcv{session = NewSession},
-	get_message4(Data, NewState);
+	get_message5(Data, NewState);
 get_message4(Data, State) ->
 	get_message5(Data, State).
 %% @hidden
