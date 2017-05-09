@@ -3,7 +3,7 @@
 
 -export([install_db/4]).
 -export([user/1]).
--export([lookup_user/1, register_user/2, reregister_user/2, transfer_ownsership/1, get_user/2]).
+-export([lookup_user/2, register_user/2, reregister_user/2, transfer_ownsership/1, get_user/2]).
 
 -include("ts_radius.hrl").
 -include("ts_config.hrl").
@@ -148,24 +148,24 @@ get_user(Tab, PrevUser) ->
 			User
 	end.
 
--spec lookup_user(Tab) ->
+-spec lookup_user(Tab, Interval) ->
 		{Type, User} when
 	Tab :: atom(),
+	Interval :: integer(),
 	Type :: interim | start | stop,
 	User :: string().
 %% @doc lookup user record
-lookup_user(Tab) ->
+lookup_user(Tab, Interval) ->
 	case acct_start(Tab) of
 		not_found ->
-			case acct_interim(Tab) of
+			case acct_interim(Tab, Interval) of
 				not_found ->
 					case acct_stop(Tab) of
 						not_found ->
-							Sleep = ts_stats:uniform(50000, 100000),
 							receive
 							after
-								Sleep ->
-									lookup_user(Tab)
+								Interval ->
+									lookup_user(Tab, Interval)
 							end;
 						StpU ->
 							{stop, StpU}
@@ -204,7 +204,7 @@ do_sleep(Tab, Interval) ->
 	receive
 	after
 		Interval ->
-			lookup_user(Tab)
+			lookup_user(Tab, Interval)
 	end.
 
 get_closest_pid(Group, AcctPid) ->
@@ -236,13 +236,14 @@ acct_start(Tab) ->
 			
 	end.
 
-acct_interim(Tab) ->
+acct_interim(Tab, Interval) ->
 	Now = erlang:system_time(millisecond),
 	MatchSpec = [{{'_', '_', true, '_', '$1', '_', '$2'},
 	[{'>=', {'-', Now, '$2'}, '$1'}], ['$_']}],
 	case  ets:select(Tab, MatchSpec, 1) of
 		{[#radius_user{username = Key} = UR], _} ->
-			ets:insert(Tab, UR#radius_user{last_interim_update = Now}),
+			ets:insert(Tab, UR#radius_user{interval = Interval,
+					last_interim_update = Now}),
 			Key;
 		'$end_of_table' ->
 			not_found

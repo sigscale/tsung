@@ -118,10 +118,10 @@ get_message5(#radius_request{type = acct, username = "_start"} = Data,
 	NewData = Data#radius_request{username = User},
 	get_message5(NewData, State);
 
-get_message5(#radius_request{type = acct} = Data,
+get_message5(#radius_request{type = acct, interval = Interval} = Data,
 		#state_rcv{session = #radius_session{tab_id = Tab,
-		data = #accounting{type = start} = Acct} = Session} = State) ->
-	case radius_lib:lookup_user(Tab) of
+		data = Acct} = Session} = State) ->
+	case radius_lib:lookup_user(Tab, Interval) of
 		{start, User} ->
 			NewSession = Session#radius_session{username = User},
 			NewState = State#state_rcv{session = NewSession},
