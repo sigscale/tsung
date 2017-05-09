@@ -75,7 +75,7 @@ get_message2(#radius_request{type = auth, auth_type = 'eap-pwd'} = Data,
 	get_message3(Data, EapRecord, State);
 get_message2(#radius_request{type = acct} = Data, #state_rcv{session =
 		#radius_session{data = undefined}} = State) ->
-	AccRecord = #accounting{start_time = erlang:now()},
+	AccRecord = #accounting{start_time = erlang:system_time(millisecond)},
 	get_message3(Data, AccRecord, State);
 get_message2(Data, State) ->
 	get_message4(Data, State).
@@ -103,7 +103,7 @@ get_message4(#radius_request{duration = Duration} = Data,
 get_message4(#radius_request{type = acct} = Data,
 		#state_rcv{session = #radius_session{duration = Duration,
 		data = Acct} = Session} = State) when Acct#accounting.type =/= stop ->
-	Elapsed = ts_utils:elapsed(Acct#accounting.start_time, erlang:now()),
+	Elapsed = ts_utils:elapsed(Acct#accounting.start_time, erlang:system_time(millisecond)),
 	case Elapsed > Duration of
 		true ->
 			NewSession = Session#radius_session{data =
@@ -272,7 +272,7 @@ parse4(#state_rcv{session = #radius_session{result_value = "success",
 		#radius_request{type = auth, auth_type = 'eap-pwd'}}}
 		= State, Opts, Close) ->
 	RegRecord = #radius_user{username = Username, interval = Interval,
-			session_timeout = Duration, reg_time = erlang:now()},
+			session_timeout = Duration, reg_time = erlang:system_time(millisecond)},
 	ok = radius_lib:register_user(Tab, RegRecord),
 	NewSession = Session#radius_session{username = undefined},
 	NewState = State#state_rcv{session = NewSession},
@@ -282,7 +282,7 @@ parse4(#state_rcv{session = #radius_session{result_value = "success",
 		duration = Duration}, request = #ts_request{param =
 		#radius_request{type = auth}}} = State, Opts, Close) ->
 	RegRecord = #radius_user{username = Username, interval = Interval,
-			session_timeout = Duration, reg_time = erlang:now()},
+			session_timeout = Duration, reg_time = erlang:system_time(millisecond)},
 	ok = radius_lib:register_user(Tab, RegRecord),
 	parse5(State, Opts, Close);
 parse4(#state_rcv{request = #ts_request{param = #radius_request{type = acct}},
