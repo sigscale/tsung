@@ -3,7 +3,7 @@
 
 -export([install_db/4]).
 -export([user/1]).
--export([stop/2, lookup_user/2, register_user/2, transfer_ownsership/1, get_user/2]).
+-export([stop/2, lookup_user/1, register_user/2, transfer_ownsership/1, get_user/2]).
 
 -include("ts_radius.hrl").
 -include("ts_config.hrl").
@@ -126,16 +126,13 @@ get_user(Tab, PrevUser) ->
 			User
 	end.
 
--spec lookup_user(Tab, Key) ->
+-spec lookup_user(Tab) ->
 		{Type, User} when
 	Tab :: atom(),
-	Key :: string() | '$end_of_table',
 	Type :: interim | start | stop,
 	User :: string().
 %% @doc lookup user record
-lookup_user(Tab, '$end_of_table') ->
-	do_sleep(Tab, 18000);
-lookup_user(Tab, Key) ->
+lookup_user(Tab) ->
 	case acct_start(Tab) of
 		not_found ->
 			case acct_interim(Tab) of
@@ -203,7 +200,7 @@ do_sleep(Tab, Interval) ->
 	receive
 	after
 		Interval ->
-			lookup_user(Tab, ets:first(Tab))
+			lookup_user(Tab)
 	end.
 
 get_closest_pid(Group, AcctPid) ->
