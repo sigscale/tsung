@@ -184,16 +184,17 @@ get_message7(Data, State) ->
 %% `Options' is list of options for socket.
 parse(Data, #state_rcv{request = #ts_request{param =
 		#radius_request{cb_mod = CbMod}}} = State) ->
-	{ok, RadiusPacket} = radius:codec(Data),
+	RadiusPacket = radius:codec(Data),
 	{NS, Opts, Close} = CbMod:parse(RadiusPacket, State),
 	parse1(RadiusPacket, NS, Opts, Close).
 %% @hidden
 parse1(#radius{code = ?AccessAccept, attributes = Attributes},
 		#state_rcv{request = #ts_request{param = #radius_request{interval = Interim,
 		duration = Duration}}, session = Session} = State, Opts, Close) ->
+	AttributeList = radius_attributes:codec(Attributes),
 	{SessionTimeout, InterimInterval} =
-				case {radius_attributes:codec(?SessionTimeout, Attributes),
-						radius_attributes:codec(?AcctInterimInterval, Attributes)} of
+				case {radius_attributes:find(?SessionTimeout, AttributeList),
+						radius_attributes:find(?AcctInterimInterval, AttributeList)} of
 			{{ok, ST}, {ok, II}} ->
 				{ST, II};
 			{{ok, ST}, {error, _}} ->
