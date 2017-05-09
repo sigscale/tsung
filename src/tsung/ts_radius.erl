@@ -100,19 +100,6 @@ get_message4(#radius_request{duration = Duration} = Data,
 	NewSession = Session#radius_session{duration = Duration},
 	NewState = State#state_rcv{session = NewSession},
 	get_message4(Data, NewState);
-get_message4(#radius_request{type = acct} = Data,
-		#state_rcv{session = #radius_session{duration = Duration,
-		data = Acct} = Session} = State) when Acct#accounting.type =/= stop ->
-	Elapsed = ts_utils:elapsed(Acct#accounting.start_time, erlang:system_time(millisecond)),
-	case Elapsed > Duration of
-		true ->
-			NewSession = Session#radius_session{data =
-				Acct#accounting{type = stop}},
-			NewState = State#state_rcv{session = NewSession},
-			get_message5(Data, NewState);
-		false ->
-			get_message5(Data, State)
-	end;
 get_message4(Data, State) ->
 	get_message5(Data, State).
 %% @hidden
