@@ -87,13 +87,6 @@ get_message3(Data, RecordData, #state_rcv{session = Session} = State) ->
 	get_message4(Data, NewState).
 
 %% @hidden
-get_message4(#radius_request{interim = false, username = PeerID} = Data,
-		#state_rcv{session = #radius_session{data = Acct} = Session} = State)
-		when Acct#accounting.type =/= start ->
-	NewSession = Session#radius_session{username = PeerID,
-		data = Acct#accounting{type = stop}},
-	NewState = State#state_rcv{session = NewSession},
-	get_message5(Data, NewState);
 get_message4(#radius_request{duration = Duration} = Data,
 		#state_rcv{session = #radius_session{duration = undefined}
 		= Session} = State) ->
@@ -118,10 +111,10 @@ get_message5(#radius_request{type = acct, username = "_start"} = Data,
 	NewData = Data#radius_request{username = User},
 	get_message5(NewData, State);
 
-get_message5(#radius_request{type = acct, interval = Interval} = Data,
+get_message5(#radius_request{type = acct} = Data,
 		#state_rcv{session = #radius_session{tab_id = Tab,
 		data = Acct} = Session} = State) ->
-	case radius_lib:lookup_user(Tab, Interval) of
+	case radius_lib:lookup_user(Tab) of
 		{start, User} ->
 			NewSession = Session#radius_session{username = User},
 			NewState = State#state_rcv{session = NewSession},
@@ -161,8 +154,8 @@ parse(Data, #state_rcv{request = #ts_request{param =
 	parse1(RadiusPacket, NS, Opts, Close).
 %% @hidden
 parse1(#radius{code = ?AccessAccept, attributes = Attributes},
-		#state_rcv{request = #ts_request{param = #radius_request{interval = Interim,
-		duration = Duration}}, session = Session} = State, Opts, Close) ->
+		#state_rcv{request = #ts_request{param = #radius_request{duration = Duration}},
+		session = Session} = State, Opts, Close) ->
 	AttributeList = radius_attributes:codec(Attributes),
 	{SessionTimeout, InterimInterval} =
 				case {radius_attributes:find(?SessionTimeout, AttributeList),
@@ -170,11 +163,11 @@ parse1(#radius{code = ?AccessAccept, attributes = Attributes},
 			{{ok, ST}, {ok, II}} ->
 				{ST, II};
 			{{ok, ST}, {error, _}} ->
-				{ST, Interim};
+				{ST, undefined};
 			{{error, _}, {ok, II}} ->
 				{Duration, II};
 			{_, _} ->
-				{Duration, Interim}
+				{Duration, undefined}
 	end,
 	NewSession = Session#radius_session{interval = InterimInterval,
 			duration = SessionTimeout},
