@@ -103,6 +103,14 @@ get_message4(#radius_request{duration = Duration} = Data,
 get_message4(Data, State) ->
 	get_message5(Data, State).
 %% @hidden
+get_message5(#radius_request{type = auth, max_reg = MaxReg} = Data,
+		#state_rcv{session = #radius_session{duration = Duration, tot_reg = TotReg,
+		tab_id = Tab} = Session}  = State) when TotReg >= MaxReg ->
+	User = radius_lib:reregister_user(Tab, Duration),
+	NewData = Data#radius_request{username = User},
+	NewSession = Session#radius_session{username = User},
+	NewState = State#state_rcv{session = NewSession},
+	get_message6(NewData, NewState);
 get_message5(#radius_request{type = acct, username = "_start"} = Data,
 		#state_rcv{session = #radius_session{tab_id = Tab,
 		data = #accounting{type = start}}} = State) ->
@@ -131,7 +139,6 @@ get_message5(#radius_request{type = acct} = Data,
 	end;
 get_message5(Data, State) ->
 	get_message6(Data, State).
-%% @hidden
 %% @hidden
 get_message6(Data, State) ->
 	CbMod = Data#radius_request.cb_mod,
@@ -219,12 +226,13 @@ parse2(#state_rcv{session = #radius_session{result_value = "stop"},
 %% @hidden
 parse3(#state_rcv{request = #ts_request{param = #radius_request{type = auth,
 		max_reg = MaxReg}}, session = #radius_session{result_value = "success",
-		tot_reg = TotReg, tab_id = Tab} = Session} = State, Opts, Close) ->
-	case MaxReg + 1 > ets:info(Tab, size) of
+		tab_id = Tab} = Session} = State, Opts, Close) ->
+		TotReg = ets:info(Tab, size),
+	case MaxReg  > TotReg - 1 of
 		true ->
 			parse4(State, Opts, Close); %%TODO sleep for awhile
 		false ->
-			NewSession = Session#radius_session{tot_reg = TotReg + 1},
+			NewSession = Session#radius_session{tot_reg = TotReg},
 			NewState = State#state_rcv{session = NewSession},
 			parse4(NewState, Opts, Close)
 	end;
