@@ -182,7 +182,8 @@ get_message7(Data, State) ->
 %% @doc Purpose: Parse the given data and return a new state
 %% 	no parsing . use only ack,
 %% `Options' is list of options for socket.
-parse(#radius_request{cb_mod = CbMod} = Data, State) ->
+parse(Data, #state_rcv{request = #ts_request{param =
+		#radius_request{cb_mod = CbMod}}} = State) ->
 	{ok, RadiusPacket} = radius:codec(Data),
 	{NS, Opts, Close} = CbMod:parse(RadiusPacket, State),
 	parse1(RadiusPacket, NS, Opts, Close).
