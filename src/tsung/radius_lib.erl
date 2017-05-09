@@ -239,7 +239,7 @@ acct_start(Tab) ->
 
 acct_interim(Tab) ->
 	Now = erlang:system_time(millisecond),
-	MatchSpec = [{{'_', '_', true, '_', '$1', '_', '$2'},
+	MatchSpec = [{{'_', '_', true, '_', '_', '$1', '_', '$2'},
 	[{'>=', {'-', Now, '$2'}, '$1'}], ['$_']}],
 	case  ets:select(Tab, MatchSpec, 1) of
 		{[#radius_user{username = Key} = UR], _} ->
