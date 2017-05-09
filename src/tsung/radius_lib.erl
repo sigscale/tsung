@@ -3,7 +3,7 @@
 
 -export([install_db/4]).
 -export([user/1]).
--export([lookup_user/1, register_user/2, transfer_ownsership/1, get_user/2]).
+-export([lookup_user/1, register_user/2, reregister_user/2, transfer_ownsership/1, get_user/2]).
 
 -include("ts_radius.hrl").
 -include("ts_config.hrl").
@@ -85,6 +85,28 @@ register_user(Tab, #radius_user{username = User} =UR)
 		when is_list(User) ->
 	ets:insert(Tab, UR),
 	ok.
+
+-spec reregister_user(Tab, Sleep) ->
+		User when
+	Tab :: atom(),
+	Sleep :: integer(),
+	User :: string().
+%% @doc choose user for reregistration
+reregister_user(Tab, Sleep) ->
+	Now = erlang:system_time(millisecond),
+	MatchSpec = [{{'_', true, '$1', '$2', '_', '_', '_'}, [{'>=',
+	{'-', Now, '$1'}, '$2'}], ['$_']}],
+	case  ets:select(Tab, MatchSpec, 1) of
+		[#radius_user{username = Key}] ->
+			Key;
+		'$end_of_table' ->
+			receive
+			after
+				Sleep ->
+					reregister_user(Tab, Sleep)
+			end
+	end.
+
 
 -spec transfer_ownsership(Tab) ->
 		ok when
