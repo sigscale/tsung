@@ -109,14 +109,14 @@ get_message5(#radius_request{type = acct, username = "_start"} = Data,
 	User = radius_lib:get_user(Tab, first),
 	NewData = Data#radius_request{username = User},
 	get_message5(NewData, State);
-get_message5(#radius_request{type = acct, username = PeerID} = Data,
+get_message5(#radius_request{type = acct} = Data,
 		#state_rcv{session = #radius_session{tab_id = Tab,
 		data = #accounting{type = start} = Acct} = Session} = State) ->
-	case radius_lib:lookup_user(Tab, PeerID) of
+	case radius_lib:lookup_user(Tab) of
 		{start, User} ->
 			NewSession = Session#radius_session{username = User},
 			NewState = State#state_rcv{session = NewSession},
-			get_message7(Data, NewState);
+			get_message6(Data, NewState);
 		{interim, User} ->
 			NewSession = Session#radius_session{data =
 						Acct#accounting{type = interim}, username = User},
@@ -131,17 +131,17 @@ get_message6(#radius_request{username = PeerID} = Data,
 		data = #accounting{type = stop} = Acct} = Session} = State) ->
 	case radius_lib:stop(Tab, PeerID) of
 		{start, User} ->
-			NewSession = Session#radius_session{data =
+			NewSession = Session#radius_session{username = User, data =
 				Acct#accounting{type = start}},
 			get_message4(Data, State#state_rcv{session = NewSession});
 		{stop, User} ->
 			get_message7(Data, State#state_rcv{session =
 					Session#radius_session{username = User}})
 	end;
-get_message6(#radius_request{interim = true, username = PeerID} = Data,
+get_message6(#radius_request{interim = true} = Data,
 		#state_rcv{session = #radius_session{tab_id = Tab,
 		data = #accounting{type = interim} = Acct} = Session} = State) ->
-	case radius_lib:lookup_user(Tab, PeerID) of
+	case radius_lib:lookup_user(Tab) of
 		{interim, User} ->
 			NewState = State#state_rcv{session =
 				Session#radius_session{username = User}},

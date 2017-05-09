@@ -130,32 +130,27 @@ get_user(Tab, PrevUser) ->
 		{Type, User} when
 	Tab :: atom(),
 	Key :: string() | '$end_of_table',
-	Type :: interim | start,
+	Type :: interim | start | stop,
 	User :: string().
 %% @doc lookup user record
 lookup_user(Tab, '$end_of_table') ->
 	do_sleep(Tab, 18000);
 lookup_user(Tab, Key) ->
-	case ets:lookup(Tab, Key) of
-		[{next_key, "$_info", _, _, _, _}] ->
-			lookup_user(Tab, ets:next(Tab, Key));
-		[#radius_user{username = Key, acct_start_time = undefined,
-				last_interim_update = undefined} = UR] ->
-			ets:insert(Tab, UR#radius_user{acct_start_time = erlang:now(),
-					last_interim_update = erlang:now()}),
-			{start, Key};
-		[#radius_user{username = Key, last_interim_update = LUpdate,
-				interval = Interval} = UR] ->
-			Elapsed = ts_utils:elapsed(LUpdate, erlang:now()),
-			case Elapsed > Interval of
-				true ->
-					ets:insert(Tab, UR#radius_user{last_interim_update = erlang:now()}),
-					{interim, Key};
-				false ->
-					lookup_user(Tab, ets:next(Tab, Key))
+	case acct_start(Tab) of
+		not_found ->
+			case acct_interim(Tab) of
+				not_found ->
+					case acct_stop(Tab) of
+						not_found ->
+							sleep; % TODO do sleep
+						StpU ->
+							{stop, StpU}
+					end;
+				InterU ->
+					{interim, InterU}
 			end;
-		[] ->
-			lookup_user(Tab, ets:next(Tab, Key))
+		StrtUser ->
+			{start, StrtUser}
 	end.
 
 -spec stop(Tab, Key) ->
@@ -164,18 +159,22 @@ lookup_user(Tab, Key) ->
 	Key :: string(),
 	Type :: start | stop,
 	User :: string().
-%% @doc select username for send accounting stop
+%% doc select username for send accounting stop
+stop(Tab, '$end_of_table') ->
+	receive
+	after
+		60000 ->
+			{start, get_user(Tab, first)}
+	end;
 stop(Tab, Key) ->
 	case ets:lookup(Tab, Key) of
 		[{next_key, "$_info", _, _, _, _}] ->
 			stop(Tab, ets:next(Tab, Key));
-		[#radius_user{username = Key, acct_start_time = STime}] when STime =/= undefined ->
-			ets:insert(Tab, #radius_user{username = Key}),
+		[#radius_user{username = Key, registered = true} = UR] ->
+			ets:insert(Tab, UR#radius_user{registered = false}),
 			{stop, Key};
 		[#radius_user{}] ->
-			stop(Tab, ets:next(Tab, Key));
-		[] ->
-			{start, ets:next(Tab, Key)}
+			stop(Tab, ets:next(Tab, Key))
 	end.
 %------------------------------------------------------------
 %% Internal Functions
@@ -221,3 +220,39 @@ get_closest_pid1([], Group, AcctPid) ->
 	{error, {group, Group}};
 get_closest_pid1({error, _} = Reason, _Gropu, _AcctPid) ->
 	Reason.
+
+acct_start(Tab) ->
+	MatchSpec =  [{{'_', true, '_', '_', '_', '_', undefined,
+		'_'}, [], ['$_']}],
+	case  ets:select(Tab, MatchSpec, 1) of
+		[#radius_user{username = Key} = UR] ->
+			NOW = erlang:system_time(millisecond),
+			ets:insert(Tab, UR#radius_user{acct_start_time = NOW,
+				last_interim_update = NOW}),
+			Key;
+		'$end_of_table' ->
+			not_found
+			
+	end.
+
+acct_interim(Tab) ->
+	Now = erlang:system_time(millisecond),
+	MatchSpec = [{{'_', true, '_', '_', '$1', '_', '$2'},
+	[{'>=', {'-', Now, '$2'}, '$1'}], ['$_']}],
+	case  ets:select(Tab, MatchSpec, 1) of
+		[#radius_user{username = Key} = UR] ->
+			ets:insert(Tab, UR#radius_user{last_interim_update = Now}),
+			Key;
+		'$end_of_table' ->
+			not_found
+	end.
+	
+acct_stop(Tab) ->
+	MatchSpec =  [{{'_', true, '$1', '_', '_', '_', '$2', '_'},
+		[{'>', '$1', '$2'}], ['$_']}],
+	case  ets:select(Tab, MatchSpec, 1) of
+		[#radius_user{username = Key}] ->
+			Key;
+		'$end_of_table' ->
+			not_found
+	end.
