@@ -3,7 +3,8 @@
 
 -export([install_db/4]).
 -export([user/1]).
--export([lookup_user/1, register_user/2, reregister_user/2, transfer_ownsership/1, get_user/2]).
+-export([lookup_user/1, register_user/2, reregister_user/2, remove_user/2,
+			transfer_ownsership/1, get_user/2]).
 
 -include("ts_radius.hrl").
 -include("ts_config.hrl").
@@ -115,6 +116,14 @@ reregister_user(Tab, Sleep) ->
 			end
 	end.
 
+-spec remove_user(Tab, Key) ->
+		ok when
+	Tab :: atom(),
+	Key :: string().
+%% @doc remove user form the table
+remove_user(Tab, Key) ->
+	ets:take(Tab, Key),
+	ok.
 
 -spec transfer_ownsership(Tab) ->
 		ok when
@@ -258,9 +267,9 @@ acct_interim(Tab) ->
 	end.
 	
 acct_stop(Tab) ->
-	MatchSpec1 =  [{{'_', '_', true, '$1', '_', '_', '$2', '_'},
+	MatchSpec =  [{{'_', '_', true, '$1', '_', '_', '$2', '_'},
 		[{'=/=', '$2', undefined},{'>', '$1', '$2'}], ['$_']}],
-	case  ets:select(Tab, MatchSpec2, 1) of
+	case  ets:select(Tab, MatchSpec, 1) of
 		{[#radius_user{username = Key} = UR], _} ->
 			ets:insert(Tab, UR#radius_user{acct_start_time = undefined,
 				last_interim_update = undefined} ),

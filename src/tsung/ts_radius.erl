@@ -232,6 +232,14 @@ parse3(#state_rcv{request = #ts_request{param = #radius_request{type = auth,
 parse3(State, Opts, Close) ->
 	parse4(State, Opts, Close).
 %% @hidden
+parse4(#state_rcv{session = #radius_session{result_value = "failure",
+		username = Username, tab_id = Tab, tot_reg = TotReg} = Session, 
+		request = #ts_request{param = #radius_request{type = auth,
+		max_reg = MaxReg}}} = State, Opts, Close) when TotReg >= MaxReg ->
+	ok = radius_lib:remove_user(Tab, Username),
+	NewSession = Session#radius_session{tot_reg = TotReg -1},
+	NewState = State#state_rcv{session = NewSession},
+	parse5(NewState, Opts, Close);
 parse4(#state_rcv{session = #radius_session{result_value = "success",
 		username = Username, tab_id = Tab, interval = Interval,
 		duration = Duration} = Session, request = #ts_request{param =
