@@ -101,7 +101,7 @@ register_user(Tab, #radius_user{username = User} =UR)
 	Password :: string() | binary().
 %% @doc choose user for reregistration
 reregister_user(Tab, Sleep) ->
-	Now = erlang:system_time(millisecond),
+	Now = erlang:system_time(milli_seconds),
 	MatchSpec = [{{'_', '_', '_', true, '$1', '$2', '_', '_', '$3'},
 		[{'=/=', '$3', undefined}, {'>=', {'-', Now, '$1'}, '$2'}], ['$_']}],
 	case  ets:select(Tab, MatchSpec, 1) of
@@ -247,7 +247,7 @@ acct_start(Tab) ->
 		'_'}, [], ['$_']}],
 	case  ets:select(Tab, MatchSpec, 1) of
 		{[#radius_user{username = Key} = UR], _} ->
-			NOW = erlang:system_time(millisecond),
+			NOW = erlang:system_time(milli_seconds),
 			ets:insert(Tab, UR#radius_user{acct_start_time = NOW,
 				last_interim_update = NOW}),
 			Key;
@@ -257,7 +257,7 @@ acct_start(Tab) ->
 	end.
 
 acct_interim(Tab) ->
-	Now = erlang:system_time(millisecond),
+	Now = erlang:system_time(milli_seconds),
 	MatchSpec = [{{'_', '_', '_', true, '_', '_', '$1', '_', '$2'},
 	[{'>=', {'-', Now, '$2'}, '$1'}], ['$_']}],
 	case  ets:select(Tab, MatchSpec, 1) of

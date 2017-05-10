@@ -75,7 +75,7 @@ get_message2(#radius_request{type = auth, auth_type = 'eap-pwd'} = Data,
 	get_message3(Data, EapRecord, State);
 get_message2(#radius_request{type = acct} = Data, #state_rcv{session =
 		#radius_session{data = undefined}} = State) ->
-	AccRecord = #accounting{start_time = erlang:system_time(millisecond)},
+	AccRecord = #accounting{start_time = erlang:system_time(milli_seconds)},
 	get_message3(Data, AccRecord, State);
 get_message2(Data, State) ->
 	get_message4(Data, State).
@@ -253,7 +253,7 @@ parse4(#state_rcv{session = #radius_session{result_value = "success",
 		#radius_request{type = auth, auth_type = 'eap-pwd'}}} = State, Opts, Close) ->
 	RegRecord = #radius_user{username = Username, password = Password,
 			interval = Interval, session_timeout = Duration,
-			reg_time = erlang:system_time(millisecond)},
+			reg_time = erlang:system_time(milli_seconds)},
 	ok = radius_lib:register_user(Tab, RegRecord),
 	NewSession = Session#radius_session{username = undefined},
 	NewState = State#state_rcv{session = NewSession},
@@ -264,7 +264,7 @@ parse4(#state_rcv{session = #radius_session{result_value = "success",
 		#radius_request{type = auth}}} = State, Opts, Close) ->
 	RegRecord = #radius_user{username = Username, password = Password,
 			interval = Interval, session_timeout = Duration,
-			reg_time = erlang:system_time(millisecond)},
+			reg_time = erlang:system_time(milli_seconds)},
 	ok = radius_lib:register_user(Tab, RegRecord),
 	parse5(State, Opts, Close);
 parse4(#state_rcv{request = #ts_request{param = #radius_request{type = acct}},
