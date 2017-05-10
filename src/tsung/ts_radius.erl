@@ -116,7 +116,8 @@ get_message5(#radius_request{type = acct} = Data,
 		data = Acct} = Session} = State) ->
 	case radius_lib:lookup_user(Tab) of
 		{start, User} ->
-			NewSession = Session#radius_session{username = User},
+			NewSession = Session#radius_session{data =
+						Acct#accounting{type = start}, username = User},
 			NewState = State#state_rcv{session = NewSession},
 			get_message6(Data, NewState);
 		{interim, User} ->
