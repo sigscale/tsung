@@ -83,8 +83,14 @@ register_user(Tab, #radius_user{username = User} = UR)
 	register_user(Tab, NR);
 register_user(Tab, #radius_user{username = User} =UR)
 		when is_list(User) ->
-	ets:insert(Tab, UR),
-	ok.
+	case ets:lookup(Tab, User) of
+		[] ->
+			ets:insert(Tab, UR),
+			ok;
+		[#radius_user{acct_start_time = STime}] ->
+			ets:insert(Tab, UR#radius_user{acct_start_time = STime, registered = true}),
+			ok
+	end.
 
 -spec reregister_user(Tab, Sleep) ->
 		User when
