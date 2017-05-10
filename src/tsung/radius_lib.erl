@@ -94,15 +94,17 @@ register_user(Tab, #radius_user{username = User} =UR)
 %% @doc choose user for reregistration
 reregister_user(Tab, Sleep) ->
 	Now = erlang:system_time(millisecond),
-	MatchSpec = [{{'_', true, '$1', '$2', '_', '_', '_'}, [{'>=',
+	MatchSpec = [{{'_', '_', true, '$1', '$2', '_', '_', '$3'}, [{'=/=', '$3', undefined}, {'>=',
 	{'-', Now, '$1'}, '$2'}], ['$_']}],
 	case  ets:select(Tab, MatchSpec, 1) of
-		{[#radius_user{username = Key}], _} ->
+		{[#radius_user{username = Key,
+				session_timeout = ST, interval = Interval} = UR], _} ->
+			true = ets:insert(Tab, UR#radius_user{reg_time = Now, registered = false}),
 			Key;
 		'$end_of_table' ->
 			receive
 			after
-				Sleep ->
+				Sleep + 1000 ->
 					reregister_user(Tab, Sleep)
 			end
 	end.
