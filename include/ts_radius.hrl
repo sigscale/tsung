@@ -2,6 +2,7 @@
 
 -record(radius_user,
 			{username :: string(),
+			password :: string() | binary(),
 			registered = true :: boolean(),
 			reg_time :: integer(),
 			session_timeout :: integer(),
@@ -26,6 +27,7 @@
 
 -record(radius_session,
 			{username :: string() | binary(),
+			password :: string() | binary(),
 			anon_name :: string() | binary(),
 			radius_id :: byte(),
 			mac :: string() | binary(),

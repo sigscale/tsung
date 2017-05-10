@@ -99,11 +99,16 @@ get_message4(Data, State) ->
 get_message5(#radius_request{type = auth, max_reg = MaxReg} = Data,
 		#state_rcv{session = #radius_session{duration = Duration, tot_reg = TotReg,
 		tab_id = Tab} = Session}  = State) when TotReg >= MaxReg ->
-	User = radius_lib:reregister_user(Tab, Duration),
+	{User, Password} = radius_lib:reregister_user(Tab, Duration),
 	NewData = Data#radius_request{username = User},
-	NewSession = Session#radius_session{username = User},
+	NewSession = Session#radius_session{username = User, password = Password},
 	NewState = State#state_rcv{session = NewSession},
 	get_message6(NewData, NewState);
+get_message5(#radius_request{type = auth, password = Password} = Data,
+		#state_rcv{session = Session}  = State) ->
+	NewSession = Session#radius_session{password = Password},
+	NewState = State#state_rcv{session = NewSession},
+	get_message6(Data, NewState);
 get_message5(#radius_request{type = acct, username = "_start"} = Data,
 		#state_rcv{session = #radius_session{tab_id = Tab,
 		data = #accounting{type = start}}} = State) ->
@@ -242,22 +247,23 @@ parse4(#state_rcv{session = #radius_session{result_value = "failure",
 	NewState = State#state_rcv{session = NewSession},
 	parse5(NewState, Opts, Close);
 parse4(#state_rcv{session = #radius_session{result_value = "success",
-		username = Username, tab_id = Tab, interval = Interval,
+		username = Username, password = Password, tab_id = Tab, interval = Interval,
 		duration = Duration} = Session, request = #ts_request{param =
-		#radius_request{type = auth, auth_type = 'eap-pwd'}}}
-		= State, Opts, Close) ->
-	RegRecord = #radius_user{username = Username, interval = Interval,
-			session_timeout = Duration, reg_time = erlang:system_time(millisecond)},
+		#radius_request{type = auth, auth_type = 'eap-pwd'}}} = State, Opts, Close) ->
+	RegRecord = #radius_user{username = Username, password = Password,
+			interval = Interval, session_timeout = Duration,
+			reg_time = erlang:system_time(millisecond)},
 	ok = radius_lib:register_user(Tab, RegRecord),
 	NewSession = Session#radius_session{username = undefined},
 	NewState = State#state_rcv{session = NewSession},
 	parse5(NewState, Opts, Close);
 parse4(#state_rcv{session = #radius_session{result_value = "success",
-		username = Username, tab_id = Tab, interval = Interval,
-		duration = Duration}, request = #ts_request{param =
+		username = Username, password = Password, tab_id = Tab,
+		interval = Interval, duration = Duration}, request = #ts_request{param =
 		#radius_request{type = auth}}} = State, Opts, Close) ->
-	RegRecord = #radius_user{username = Username, interval = Interval,
-			session_timeout = Duration, reg_time = erlang:system_time(millisecond)},
+	RegRecord = #radius_user{username = Username, password = Password,
+			interval = Interval, session_timeout = Duration,
+			reg_time = erlang:system_time(millisecond)},
 	ok = radius_lib:register_user(Tab, RegRecord),
 	parse5(State, Opts, Close);
 parse4(#state_rcv{request = #ts_request{param = #radius_request{type = acct}},

@@ -94,20 +94,22 @@ register_user(Tab, #radius_user{username = User} =UR)
 	end.
 
 -spec reregister_user(Tab, Sleep) ->
-		User when
+		{User, Password} when
 	Tab :: atom(),
 	Sleep :: integer(),
-	User :: string().
+	User :: string(),
+	Password :: string() | binary().
 %% @doc choose user for reregistration
 reregister_user(Tab, Sleep) ->
 	Now = erlang:system_time(millisecond),
-	MatchSpec = [{{'_', '_', true, '$1', '$2', '_', '_', '$3'}, [{'=/=', '$3', undefined}, {'>=',
-	{'-', Now, '$1'}, '$2'}], ['$_']}],
+	MatchSpec = [{{'_', '_', '_', true, '$1', '$2', '_', '_', '$3'},
+		[{'=/=', '$3', undefined}, {'>=', {'-', Now, '$1'}, '$2'}], ['$_']}],
 	case  ets:select(Tab, MatchSpec, 1) of
 		{[#radius_user{username = Key,
-				session_timeout = ST, interval = Interval} = UR], _} ->
+				session_timeout = ST, interval = Interval,
+				password = Password} = UR], _} ->
 			true = ets:insert(Tab, UR#radius_user{reg_time = Now, registered = false}),
-			Key;
+			{Key, Password};
 		'$end_of_table' ->
 			receive
 			after
@@ -241,7 +243,7 @@ get_closest_pid1({error, _} = Reason, _Gropu, _AcctPid) ->
 	Reason.
 
 acct_start(Tab) ->
-	MatchSpec =  [{{'_', '_', true, '_', '_', '_', undefined,
+	MatchSpec =  [{{'_', '_', '_', true, '_', '_', '_', undefined,
 		'_'}, [], ['$_']}],
 	case  ets:select(Tab, MatchSpec, 1) of
 		{[#radius_user{username = Key} = UR], _} ->
@@ -256,7 +258,7 @@ acct_start(Tab) ->
 
 acct_interim(Tab) ->
 	Now = erlang:system_time(millisecond),
-	MatchSpec = [{{'_', '_', true, '_', '_', '$1', '_', '$2'},
+	MatchSpec = [{{'_', '_', '_', true, '_', '_', '$1', '_', '$2'},
 	[{'>=', {'-', Now, '$2'}, '$1'}], ['$_']}],
 	case  ets:select(Tab, MatchSpec, 1) of
 		{[#radius_user{username = Key} = UR], _} ->
@@ -267,7 +269,7 @@ acct_interim(Tab) ->
 	end.
 	
 acct_stop(Tab) ->
-	MatchSpec =  [{{'_', '_', true, '$1', '_', '_', '$2', '_'},
+	MatchSpec =  [{{'_', '_', '_', true, '$1', '_', '_', '$2', '_'},
 		[{'=/=', '$2', undefined},{'>', '$1', '$2'}], ['$_']}],
 	case  ets:select(Tab, MatchSpec, 1) of
 		{[#radius_user{username = Key} = UR], _} ->
