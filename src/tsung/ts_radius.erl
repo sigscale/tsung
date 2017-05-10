@@ -100,12 +100,13 @@ get_message5(#radius_request{type = auth, max_reg = MaxReg} = Data,
 		#state_rcv{session = #radius_session{duration = Duration, tot_reg = TotReg,
 		tab_id = Tab} = Session}  = State) when TotReg >= MaxReg ->
 	{User, Password} = radius_lib:reregister_user(Tab, Duration),
-	NewData = Data#radius_request{username = User},
+	NewData = Data#radius_request{username = User, password = Password},
 	NewSession = Session#radius_session{username = User, password = Password},
 	NewState = State#state_rcv{session = NewSession},
 	get_message6(NewData, NewState);
-get_message5(#radius_request{type = auth, password = Password} = Data,
-		#state_rcv{session = Session}  = State) ->
+get_message5(#radius_request{type = auth, password = Password, max_reg = MaxReg} = Data,
+		#state_rcv{session = #radius_session{tot_reg = TotReg} = Session}
+		= State) when TotReg < MaxReg ->
 	NewSession = Session#radius_session{password = Password},
 	NewState = State#state_rcv{session = NewSession},
 	get_message6(Data, NewState);
