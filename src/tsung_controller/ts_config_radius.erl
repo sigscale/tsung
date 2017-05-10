@@ -41,7 +41,7 @@ parse_config(Element = #xmlElement{name = radius, attributes = Attrs},
 			Duration = getAttr(integer, Element#xmlElement.content, pap, duration),
 			CbMod = getAttr(atom, Element#xmlElement.content, pap, cb_mod),
 			Password = getAttr(string, Element#xmlElement.content, pap, password),
-			DefParams#radius_request{auth_type = pap, cb_mod = CbMod, duration = Duration,
+			DefParams#radius_request{auth_type = pap, cb_mod = CbMod, duration = Duration * 1000,
 					port = Port, password = Password, result_var = {var, ResultVar}};
 		{auth, eap_pwd} ->
 			Port = ts_config:getAttr(integer, Attrs, port, 1812),
@@ -49,7 +49,7 @@ parse_config(Element = #xmlElement{name = radius, attributes = Attrs},
 			CbMod = getAttr(atom, Element#xmlElement.content, eap_pwd, cb_mod),
 			Duration = getAttr(integer, Element#xmlElement.content, eap_pwd, duration),
 			Password = getAttr(string, Element#xmlElement.content, eap_pwd, password),
-			DefParams#radius_request{auth_type = 'eap-pwd', cb_mod = CbMod, duration = Duration,
+			DefParams#radius_request{auth_type = 'eap-pwd', cb_mod = CbMod, duration = Duration * 1000,
 					port = Port, password = Password, result_var = {var, ResultVar}};
 		{auth, chap} ->
 			todo;
