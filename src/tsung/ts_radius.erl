@@ -171,7 +171,7 @@ parse1(#radius{code = ?AccessAccept, attributes = Attributes},
 			{{ok, ST}, {error, _}} ->
 				{ST, undefined};
 			{{error, _}, {ok, II}} ->
-				{Duration, II};
+				{Duration, II * 1000};
 			{_, _} ->
 				{Duration, undefined}
 	end,
