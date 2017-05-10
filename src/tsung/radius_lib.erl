@@ -258,10 +258,12 @@ acct_interim(Tab) ->
 	end.
 	
 acct_stop(Tab) ->
-	MatchSpec =  [{{'_', '_', true, '$1', '_', '_', '$2', '_'},
-		[{'>', '$1', '$2'}], ['$_']}],
-	case  ets:select(Tab, MatchSpec, 1) of
-		{[#radius_user{username = Key}], _} ->
+	MatchSpec1 =  [{{'_', '_', true, '$1', '_', '_', '$2', '_'},
+		[{'=/=', '$2', undefined},{'>', '$1', '$2'}], ['$_']}],
+	case  ets:select(Tab, MatchSpec2, 1) of
+		{[#radius_user{username = Key} = UR], _} ->
+			ets:insert(Tab, UR#radius_user{acct_start_time = undefined,
+				last_interim_update = undefined} ),
 			Key;
 		'$end_of_table' ->
 			not_found
