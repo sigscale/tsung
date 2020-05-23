@@ -181,7 +181,8 @@ ending when EAP indicates the final response:
             </radius>
         </request>
         <while var="result" eq="challenge" />
-</repeat>
+    </repeat>
+</transaction>
 ```
 
 # Build & Install
