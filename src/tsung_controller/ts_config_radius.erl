@@ -38,19 +38,34 @@ parse_config(Element = #xmlElement{name = radius, attributes = Attrs},
 		{auth, pap}  ->
 			Port = ts_config:getAttr(integer, Attrs, port, 1812),
 			ResultVar = ts_config:getAttr(atom, Attrs, result_var, none),
-			Duration = getAttr(integer, Element#xmlElement.content, pap, duration),
 			CbMod = getAttr(atom, Element#xmlElement.content, pap, cb_mod),
 			Password = getAttr(string, Element#xmlElement.content, pap, password),
-			DefParams#radius_request{auth_type = pap, cb_mod = CbMod, duration = Duration * 1000,
-					port = Port, password = Password, result_var = {var, ResultVar}};
+			case getAttr(integer, Element#xmlElement.content, pap, duration) of
+				Duration when is_integer(Duration) ->
+					DefParams#radius_request{auth_type = pap, cb_mod = CbMod,
+							duration = Duration * 1000, port = Port,
+							password = Password, result_var = {var, ResultVar}};
+				undefined ->
+					DefParams#radius_request{auth_type = pap, cb_mod = CbMod,
+							port = Port, password = Password,
+							result_var = {var, ResultVar}}
+			end;
 		{auth, eap_pwd} ->
 			Port = ts_config:getAttr(integer, Attrs, port, 1812),
 			ResultVar = ts_config:getAttr(atom, Attrs, result_var, none),
 			CbMod = getAttr(atom, Element#xmlElement.content, eap_pwd, cb_mod),
 			Duration = getAttr(integer, Element#xmlElement.content, eap_pwd, duration),
 			Password = getAttr(string, Element#xmlElement.content, eap_pwd, password),
-			DefParams#radius_request{auth_type = 'eap-pwd', cb_mod = CbMod, duration = Duration * 1000,
-					port = Port, password = Password, result_var = {var, ResultVar}};
+			case getAttr(integer, Element#xmlElement.content, pap, duration) of
+				Duration when is_integer(Duration) ->
+					DefParams#radius_request{auth_type = 'eap-pwd',
+							cb_mod = CbMod, duration = Duration * 1000, port = Port,
+							password = Password, result_var = {var, ResultVar}};
+				undefined ->
+					DefParams#radius_request{auth_type = 'eap-pwd',
+							cb_mod = CbMod, port = Port,
+							password = Password, result_var = {var, ResultVar}}
+			end;
 		{auth, chap} ->
 			todo;
 		{auth, eap_ttls} ->
