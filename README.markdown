@@ -129,27 +129,16 @@ as shown in the example below where a `credentials.csv` file is consulted and a 
 </transaction>
 ```
 
-### Looping
-While other protocols Tsung supports (e.g. HTTP) have short lived sessions
-with RADIUS a Network Access Server (NAS) would maintain a permanent
-association with an Access, Authentication & Accounting (AAA) server. Each
-"user" defined in the scenario configuration represents a socket of a NAS.
-Therefore a scenario configuration for RADIUS will typically use a
-[repeat](http://tsung.erlang-projects.org/user_manual/conf-advanced-features.html#repeat)
-element within a `<session>`:
+### Maximum Registrations
+The example below demonstrates using the `max_reg' attribute to end a user session (default=1000):
 ```xml
-<session weight="1" name="simple-auth" type="ts_radius">
-    <repeat name="nas-simple" max_repeat="10000000">
-        <transaction name="auth-simple">
-            <request>
-                <radius type="auth" secret="helga1989" username="john">
-                    <pap cb_mod="ts_auth_pap" password="12345" />
-                </radius>
-            </request>
-        </transaction>
-    <while var="username" neq="done" />
-    </repeat>
-</session>
+<transaction name="auth-simple">
+    <request subst="true">
+        <radius type="auth" max_reg="10000" secret="helga1989" username="%%_username%%">
+            <pap cb_mod="ts_auth_pap" password="%%_password%%" />
+        </radius>
+    </request>
+</transaction>
 ```
 
 ### Timing
