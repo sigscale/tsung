@@ -51,13 +51,14 @@ get_message(Data, State) ->
 	get_message2(Data, State).
 
 %% @hidden
-get_message1(Type, Data, #state_rcv{session = Session ,dynvars = DynVars} = State) ->
+get_message1(Type, Data, #state_rcv{session = Session, dynvars = DynVars} = State) ->
 	{ok, ID} = ts_dynvars:lookup(tsung_userid, DynVars),
 	{ok, CHost} = ts_utils:node_to_hostname(node()),
 	NasID = CHost ++ "_" ++ Type ++ integer_to_list(ID),
 	Tab = list_to_atom(NasID),
 	case radius_lib:install_db(Type, self(), NasID, Tab) of
-		{error, _} ->
+		{error, _Reason} ->
+error_logger:error_report([{error, _Reason}, {module, ?MODULE}, {line, ?LINE}]),
 			Elapsed = ts_utils:elapsed(State#state_rcv.starttime, ?NOW),
 			self() ! timeout,
 			%% ts_mon:endclient({State#state_rcv.id, ?TIMESTAMP, Elapsed}), is it mandatory to do this ??
@@ -232,6 +233,8 @@ parse3(#state_rcv{request = #ts_request{param = #radius_request{type = auth,
 		true ->
 			parse4(State, Opts, Close); %%TODO sleep for awhile
 		false ->
+			error_logger:info_report(["Maximum RADIUS registrations reached (max_reg)",
+					{max_reg, MaxReg}, {registered, TotReg}]),
 			NewSession = Session#radius_session{tot_reg = TotReg},
 			NewState = State#state_rcv{session = NewSession},
 			parse4(NewState, Opts, Close)
