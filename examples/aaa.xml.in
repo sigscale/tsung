@@ -8,7 +8,8 @@
    </clients>
 
    <servers>
-      <server host="tsung-controller" port="1812" type="udp" weight="1"></server> 
+      <server host="accounting" port="1813" type="udp" weight="1"></server> 
+      <server host="authentication" port="1812" type="udp" weight="100"></server> 
    </servers>
 
    <monitoring>
@@ -60,7 +61,7 @@
             </setdynvars>
             <transaction name="accounting">
                <request subst='true'>
-                  <radius type="acc" port="1813" secret="helga1989" username="%%_username%%" delay="random" min="50" max="200">
+                  <radius type="acct" port="1813" secret="helga1989" username="%%_username%%" delay="random" min="50" max="200">
                      <accounting cb_mod="ts_accounting"></accounting>
                   </radius>
                </request>
